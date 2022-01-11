@@ -26,7 +26,6 @@ on:
 jobs:
    main:
     runs-on: ubuntu-latest
-    needs: workflow-start
     environment:
       name: ${{ github.event.inputs.subscription_code }}
     steps:
