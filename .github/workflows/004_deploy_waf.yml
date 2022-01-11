@@ -47,7 +47,7 @@ jobs:
           inlineScript: |
             for module in {la,dps}
             do
-              ./azure/deployments/401-deploy-additinal-waf-policies.sh \
+              bash ./azure/deployments/401-deploy-additinal-waf-policies.sh \
                 "${{ github.event.inputs.env_name }}" \
                 "${module}" \
                 "${{ github.event.inputs.region_code }}" \

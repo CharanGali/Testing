@@ -45,7 +45,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/300-update-dns-record.sh \
+            bash ./azure/deployments/300-update-dns-record.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.app_code }}"
@@ -58,7 +58,7 @@ jobs:
           inlineScript: |
             for module in {la,dps,ocsp}
             do
-              ./azure/deployments/301-update-agw-backend-pool-for-each-module.sh \
+              bash ./azure/deployments/301-update-agw-backend-pool-for-each-module.sh \
                 "${{ github.event.inputs.env_name }}" \
                 "${module}" \
                 "${{ github.event.inputs.region_code }}" \
@@ -76,7 +76,7 @@ jobs:
           inlineScript: |
             for module in {la,dps,ocsp}
             do
-              ./azure/deployments/302-update-agw-http-setting-for-each-module.sh \
+              bash ./azure/deployments/302-update-agw-http-setting-for-each-module.sh \
                 "${{ github.event.inputs.env_name }}" \
                 "${module}" \
                 "${{ github.event.inputs.region_code }}" \
@@ -93,7 +93,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/303-update-agw-listener.sh \
+            bash ./azure/deployments/303-update-agw-listener.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \
@@ -108,7 +108,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/304-update-agw-url-path-map-rule.sh \
+            bash ./azure/deployments/304-update-agw-url-path-map-rule.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \
@@ -122,7 +122,7 @@ jobs:
           inlineScript: |
             for module in {la,dps,ocsp}
             do
-              ./azure/deployments/305-update-agw-path-based-rule-for-each-module.sh \
+              bash ./azure/deployments/305-update-agw-path-based-rule-for-each-module.sh \
                 "${{ github.event.inputs.env_name }}" \
                 "${module}" \
                 "${{ github.event.inputs.region_code }}" \

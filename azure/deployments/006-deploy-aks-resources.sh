@@ -21,13 +21,13 @@ readonly COMMON_DEPLOYMENT_OPTIONS="\
 "
 
 echo '----------- create custom role for AKS service principal -----------'
-./../scripts/create-custom-role-for-aks-sp.sh ${COMMON_DEPLOYMENT_OPTIONS}
+bash ./../scripts/create-custom-role-for-aks-sp.sh ${COMMON_DEPLOYMENT_OPTIONS}
 
 echo '----------- create service principal for AKS -----------'
-./../scripts/create-service-principal-for-aks.sh ${ENV_NAME} ${SUBSCRIPTION_CODE} ${APP_CODE}
+bash ./../scripts/create-service-principal-for-aks.sh ${ENV_NAME} ${SUBSCRIPTION_CODE} ${APP_CODE}
 
 echo '----------- create managed clusters -----------'
-./../scripts/create-container-service-managed-clusters.sh ${COMMON_DEPLOYMENT_OPTIONS}
+bash ./../scripts/create-container-service-managed-clusters.sh ${COMMON_DEPLOYMENT_OPTIONS}
 
 echo '----------- assign custom role to aks service principal -----------'
-./../scripts/assign-custom-role-to-aks-sp.sh ${ENV_NAME} ${SUBSCRIPTION_CODE} ${APP_CODE}
+bash ./../scripts/assign-custom-role-to-aks-sp.sh ${ENV_NAME} ${SUBSCRIPTION_CODE} ${APP_CODE}

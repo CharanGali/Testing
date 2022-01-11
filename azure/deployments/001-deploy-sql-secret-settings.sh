@@ -11,10 +11,10 @@ readonly APP_CODE=${4:-lacmn}
 pushd $(dirname $0)
 
 readonly SHARED_KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-./../scripts/add-myself-to-key-vault-access-policy.sh ${SUBSCRIPTION_CODE} ${SHARED_KV_RG_NAME}
+bash ./../scripts/add-myself-to-key-vault-access-policy.sh ${SUBSCRIPTION_CODE} ${SHARED_KV_RG_NAME}
 
 function deletePolicy () {
-  ./../scripts/remove-myself-to-key-vault-access-policy.sh ${SUBSCRIPTION_CODE} ${SHARED_KV_RG_NAME}
+  bash ./../scripts/remove-myself-to-key-vault-access-policy.sh ${SUBSCRIPTION_CODE} ${SHARED_KV_RG_NAME}
 }
 
 trap "deletePolicy; popd" EXIT
@@ -27,4 +27,4 @@ readonly COMMON_DEPLOYMENT_OPTIONS="
 "
 
 echo '----------- set mysql admin user info to key vault -----------'
-./../scripts/set-mysql-admin-user-info-to-kv.sh ${SUBSCRIPTION_CODE}
+bash ./../scripts/set-mysql-admin-user-info-to-kv.sh ${SUBSCRIPTION_CODE}

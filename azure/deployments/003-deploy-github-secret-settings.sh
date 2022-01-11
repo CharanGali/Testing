@@ -12,11 +12,11 @@ pushd "$(dirname "$0")"
 
 # 共通Key Vaultのsecretの登録作業用にaccess policyに自分を登録する
 readonly SHARED_KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-./../scripts/add-myself-to-key-vault-access-policy.sh "${SUBSCRIPTION_CODE}" "${SHARED_KV_RG_NAME}"
+bash ./../scripts/add-myself-to-key-vault-access-policy.sh "${SUBSCRIPTION_CODE}" "${SHARED_KV_RG_NAME}"
 
 # 作業完了後にポリシーを削除するための関数
 function deletePolicy () {
-  ./../scripts/remove-myself-to-key-vault-access-policy.sh "${SUBSCRIPTION_CODE}" "${SHARED_KV_RG_NAME}"
+  bash ./../scripts/remove-myself-to-key-vault-access-policy.sh "${SUBSCRIPTION_CODE}" "${SHARED_KV_RG_NAME}"
 }
 
 trap "deletePolicy; popd" EXIT

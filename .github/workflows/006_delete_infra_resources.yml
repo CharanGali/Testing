@@ -43,7 +43,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/601-delete-infra-resources.sh \
+            bash ./azure/deployments/601-delete-infra-resources.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \

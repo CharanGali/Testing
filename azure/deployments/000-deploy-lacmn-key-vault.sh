@@ -21,4 +21,4 @@ readonly COMMON_DEPLOYMENT_OPTIONS="\
 "
 
 echo '----------- create key vault -----------'
-./../scripts/create-key-vault.sh ${COMMON_DEPLOYMENT_OPTIONS}
+bash ./../scripts/create-key-vault.sh ${COMMON_DEPLOYMENT_OPTIONS}

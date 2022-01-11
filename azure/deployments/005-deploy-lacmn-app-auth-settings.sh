@@ -13,5 +13,5 @@ pushd $(dirname $0)
 trap "popd" EXIT
 
 echo '----------- create service principals for scapi -----------'
-./../scripts/create-service-principal-for-lacmn.sh ${ENV_NAME} ${SUBSCRIPTION_CODE} ${APP_CODE}
+bash ./../scripts/create-service-principal-for-lacmn.sh ${ENV_NAME} ${SUBSCRIPTION_CODE} ${APP_CODE}
 

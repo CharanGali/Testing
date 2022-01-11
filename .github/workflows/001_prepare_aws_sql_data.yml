@@ -51,7 +51,7 @@ jobs:
       - name: Mask secret values
         id: maskSecretValues
         run: |
-          ./.github/scripts/mask-secret-values.sh
+          bash ./.github/scripts/mask-secret-values.sh
 
       - name: Firewall IP Settings
         id: addMyIpToKeyVaultNetworkRole
@@ -66,10 +66,10 @@ jobs:
             CMN_KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
             KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
             MY_IP=$(curl -s https://checkip.amazonaws.com/)
-            ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
-            ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${CMN_KV_RG_NAME}
+            bash ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
+            bash ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${CMN_KV_RG_NAME}
             echo "::set-output name=MY_IP::${MY_IP}"
-            ./.github/scripts/add-ip-to-aks-network-rule.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${MY_IP}
+            bash ./.github/scripts/add-ip-to-aks-network-rule.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${MY_IP}
             sleep 120;
 
       - name: STEP 100
@@ -77,7 +77,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./saas/azure/deployments/100-add-key-vault-secrets.sh \
+            bash ./saas/azure/deployments/100-add-key-vault-secrets.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.app_code }}" \
@@ -89,7 +89,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./saas/azure/deployments/101-init-lacmn-db.sh \
+            bash ./saas/azure/deployments/101-init-lacmn-db.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \
@@ -109,9 +109,9 @@ jobs:
             CMN_KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
             KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
             MY_IP="${{ steps.addMyIpToKeyVaultNetworkRole.outputs.MY_IP }}"
-            ./.github/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${CMN_KV_RG_NAME}
-            ./.github/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
-            ./.github/scripts/remove-ip-from-aks-network-rule.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${MY_IP}
+            bash ./.github/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${CMN_KV_RG_NAME}
+            bash ./.github/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
+            bash ./.github/scripts/remove-ip-from-aks-network-rule.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${MY_IP}
 
       - name: Send Notification to slack
         if: always()

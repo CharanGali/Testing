@@ -60,7 +60,7 @@ jobs:
               echo "Could not get MY_IP"
               exit 1
             fi
-            ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
+            bash ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
             echo "::set-output name=MY_IP::${MY_IP}"
 
       - name: Deploy Monitoring ARM Template
@@ -101,7 +101,7 @@ jobs:
               echo "Could not get MY_IP"
               exit 1
             fi
-            ./.github/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
+            bash ./.github/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
 
       - name: Send Notification to slack
         if: always()

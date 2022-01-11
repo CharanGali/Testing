@@ -49,7 +49,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/scripts/backup-application-gateway.sh \
+            bash ./azure/scripts/backup-application-gateway.sh \
               "${ENV_NAME}" \
               "${SUBSCRIPTION_CODE}" \
               "${APP_CODE}"

@@ -74,14 +74,14 @@ jobs:
             if [ -z ${MY_IP} ]; then
               exit 1
             fi
-            ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
+            bash ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
             # remove時に使うためにoutput
             echo "::set-output name=MY_IP::${MY_IP}"
 
       - name: Mask secret values
         id: maskSecretValues
         run: |
-          ./.github/scripts/mask-secret-values.sh
+          bash ./.github/scripts/mask-secret-values.sh
 
       - name: Upsert the postAlertOpsgenieApiKey
         uses: azure/CLI@v1
@@ -104,7 +104,7 @@ jobs:
               SECRET_KEY="postAlertOpsgenieApiKey"
             fi
 
-            ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
+            bash ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
               ${ENV_NAME} \
               ${SUBSCRIPTION_CODE} \
               ${APP_CODE} \
@@ -133,7 +133,7 @@ jobs:
               SECRET_KEY="metricsOpsgenieEndpoint"
             fi
 
-            ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
+            bash ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
               ${ENV_NAME} \
               ${SUBSCRIPTION_CODE} \
               ${APP_CODE} \
@@ -162,7 +162,7 @@ jobs:
               SECRET_KEY="resourceHealthOpsgenieEndpoint"
             fi
 
-            ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
+            bash ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
               ${ENV_NAME} \
               ${SUBSCRIPTION_CODE} \
               ${APP_CODE} \
@@ -191,7 +191,7 @@ jobs:
               SECRET_KEY="serviceHealthOpsgenieEndpoint"
             fi
 
-            ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
+            bash ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
               ${ENV_NAME} \
               ${SUBSCRIPTION_CODE} \
               ${APP_CODE} \
@@ -218,7 +218,7 @@ jobs:
             if [ -z ${MY_IP} ]; then
               exit 1
             fi
-            ./azure/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
+            bash ./azure/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
 
       - name: Send Notification to slack
         if: always()
