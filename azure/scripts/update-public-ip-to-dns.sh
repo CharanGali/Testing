@@ -12,7 +12,7 @@ readonly DNS_RG_NAME=$5
 pushd $(dirname $0)
 trap "popd" EXIT
 
-DNS_SUBSCRIPTION_OPTION=$(./build-subscription-option.sh ${DNS_SUBSCRIPTION_CODE})
+DNS_SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh ${DNS_SUBSCRIPTION_CODE})
 
 EXISTING_RECORD=$(az network dns record-set a list \
   ${DNS_SUBSCRIPTION_OPTION} \
