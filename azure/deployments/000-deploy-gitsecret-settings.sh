@@ -16,10 +16,10 @@ readonly COMMON_DEPLOYMENT_OPTIONS="
 "
 
 echo '----------- create custom role for github action -----------'
-bash ./../scripts/create-custom-role-for-gha-sp.sh ${COMMON_DEPLOYMENT_OPTIONS}
+bash ../scripts/create-custom-role-for-gha-sp.sh ${COMMON_DEPLOYMENT_OPTIONS}
 
 echo '----------- create service principal for github action -----------'
-bash ./../scripts/create-service-principal-for-gha.sh ${COMMON_DEPLOYMENT_OPTIONS}
+bash ../scripts/create-service-principal-for-gha.sh ${COMMON_DEPLOYMENT_OPTIONS}
 
 echo '----------- assign custom role to gha service principal -----------'
-bash ./../scripts/assign-custom-role-to-gha-sp.sh ${COMMON_DEPLOYMENT_OPTIONS}
+bash ../scripts/assign-custom-role-to-gha-sp.sh ${COMMON_DEPLOYMENT_OPTIONS}
