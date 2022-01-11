@@ -15,7 +15,7 @@ readonly SERVICE_NAME=$5
 pushd $(dirname $0) > /dev/null
 trap "popd > /dev/null" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 AKS_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-aks"
 CLUSTER_NAME="aks-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-${REGION_CODE}"
 

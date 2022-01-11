@@ -15,7 +15,7 @@ trap "popd" EXIT
 
 readonly SERVICE_CODE="role"
 DEPLOYMENT_VERSION=$(git describe --always)
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 DEPLOYMENT_NAME="${SUBSCRIPTION_CODE}-${APP_CODE}-${ENV_NAME}-gha-sp-custom-role"
 

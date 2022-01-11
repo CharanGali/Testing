@@ -12,7 +12,7 @@ trap "popd" EXIT
 
 readonly AGW_SERVICE_CODE="agw"
 read -ra SUBSCRIPTION_OPTION <<< \
-  "$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
+  "$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
 
 AGW_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-${AGW_SERVICE_CODE}"
 RG_EXISTS=$(az group exists "${SUBSCRIPTION_OPTION[@]}" -n "${AGW_RG_NAME}")

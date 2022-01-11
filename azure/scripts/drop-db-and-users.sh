@@ -18,10 +18,10 @@ if [ -n "${CI-}" ]; then
   az aks install-cli
 fi
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 readonly CMN_KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-cmn-main-kv"
-CMN_KEY_VAULT_ID=$(./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${CMN_KV_RG_NAME})
+CMN_KEY_VAULT_ID=$(bash ./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${CMN_KV_RG_NAME})
 CMN_KEY_VAULT_NAME=$(basename "${CMN_KEY_VAULT_ID}")
 get_secret_from_cmn_key_vault() {
   ./../../scripts/tools/get-key-vault-secret.sh "$1" "${SUBSCRIPTION_CODE}" "${CMN_KEY_VAULT_NAME}"

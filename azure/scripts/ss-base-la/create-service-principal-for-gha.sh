@@ -12,8 +12,8 @@ readonly APP_CODE=$3
 pushd "$(dirname "$0")"
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION="$(../build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
-SUBSCRIPTION_ID=$(../get-subscription-id.sh ${SUBSCRIPTION_CODE})
+SUBSCRIPTION_OPTION="$(bash ../build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
+SUBSCRIPTION_ID=$(bash ../get-subscription-id.sh ${SUBSCRIPTION_CODE})
 
 readonly REPO="ss-base-la"
 readonly USAGE="gha-${REPO}"
@@ -45,7 +45,7 @@ KEY_VAULT_ID=$(./../get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${SHARED_KV_RG_NAME
 KEY_VAULT_NAME=$(basename "${KEY_VAULT_ID}")
 
 add_secret_to_key_vault() {
-  ../../scripts/set-key-vault-secret.sh "$1" "$2" "${SUBSCRIPTION_CODE}" "${KEY_VAULT_NAME}" > /dev/null
+  bash ../../scripts/set-key-vault-secret.sh "$1" "$2" "${SUBSCRIPTION_CODE}" "${KEY_VAULT_NAME}" > /dev/null
 }
 
 add_secret_to_key_vault "sp-${USAGE}-appId"       "${APP_ID}"

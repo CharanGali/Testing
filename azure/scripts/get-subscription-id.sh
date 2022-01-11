@@ -9,7 +9,7 @@ case "${SUBSCRIPTION_CODE}" in
 
   "dcsmdev" ) SUBSCRIPTION_NAME="SensingStationCore Dev" ;;
   "dcsmprd" ) SUBSCRIPTION_NAME="SensingStationCore Prd" ;;
-  "sgcsdev" ) SUBSCRIPTION_NAME="GlobalControlService Dev" ;;
+  "gcsdev" ) SUBSCRIPTION_NAME="GlobalControlService Dev" ;;
   "sgcsprd" ) SUBSCRIPTION_NAME="GlobalControlService Prd" ;;
   "cameradev" ) SUBSCRIPTION_NAME="SmartCamera Global Control Service Dev" ;;
   "gcspre" ) SUBSCRIPTION_NAME="GlobalControlService Pre" ;;

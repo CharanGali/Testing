@@ -49,14 +49,14 @@ trap "popd" EXIT
 
 readonly SERVICE_CODE="aks"
 DEPLOYMENT_VERSION=$(git describe --always)
-SUBSCRIPTION_OPTION=$(./../tools/build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 # Create Resource Group and get its name
-RG_NAME=$(./../tools/create-resource-group.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${SERVICE_CODE} | sed -ne "s/^RESOURCE_GROUP_NAME=\(.*\)$/\1/p")
+RG_NAME=$(bash ./create-resource-group.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${SERVICE_CODE} | sed -ne "s/^RESOURCE_GROUP_NAME=\(.*\)$/\1/p")
 
 # Key Vault名の取得
 readonly KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-KEY_VAULT_ID=$(./../tools/get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
+KEY_VAULT_ID=$(bash ./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
 # パラメータファイルテンプレートを元にして、実際に使うパラメータJSONファイルを生成する
 PARAM_JSON_TMP_FILE=$(mktemp)
 sed -e "s:__TO_BE_RAPLACED_KEY_VAULT_ID__:${KEY_VAULT_ID}:g" \
@@ -69,9 +69,9 @@ az deployment group create \
   ${SUBSCRIPTION_OPTION} \
   --name "container-service-managed-clusters" \
   --resource-group ${RG_NAME} \
-  --template-file ../../templates/lacmn/container-service-managed-clusters.json \
+  --template-file ../templates/container-service-managed-clusters.json \
   --parameters ${PARAM_JSON_TMP_FILE} \
-  --parameters ../../parameters/lacmn/container-service-managed-clusters.json \
+  --parameters ../parameters/container-service-managed-clusters.json \
   --parameters \
     env=${ENV_NAME} \
     regionCode=${REGION_CODE} \
@@ -85,8 +85,8 @@ az deployment group create \
   ${SUBSCRIPTION_OPTION} \
   --name "container-service-managed-clusters-agent-pool" \
   --resource-group ${RG_NAME} \
-  --template-file ../../templates/lacmn/container-service-mc-agent-pools.json \
-  --parameters ../../parameters/lacmn/container-service-mc-agent-pools.json \
+  --template-file ../templates/container-service-mc-agent-pools.json \
+  --parameters ../parameters/container-service-mc-agent-pools.json \
   --parameters \
     env=${ENV_NAME} \
     regionCode=${REGION_CODE} \

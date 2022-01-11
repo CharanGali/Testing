@@ -25,7 +25,7 @@ if [ "${TARGET_IP_ADDRESS}" = "default" ]; then
   case "${MODULE_NAME}" in
   la|dps|ocsp)
     readonly TARGET_AKS_SERVICE_NAME="${MODULE_NAME}-express"
-    TARGET_IP_ADDRESS=$(./../scripts/get-aks-external-ip.sh \
+    TARGET_IP_ADDRESS=$(bash ./../scripts/get-aks-external-ip.sh \
       "${ENV_NAME}" \
       "${REGION_CODE}" \
       "${SUBSCRIPTION_CODE}" \
@@ -37,7 +37,7 @@ if [ "${TARGET_IP_ADDRESS}" = "default" ]; then
   esac
 fi
 
-./../scripts/update-agw-backend-pool.sh \
+bash ./../scripts/update-agw-backend-pool.sh \
   "${SUBSCRIPTION_CODE}" \
   "${BACKEND_POOL_NAME}" \
   "${TARGET_IP_ADDRESS}" \

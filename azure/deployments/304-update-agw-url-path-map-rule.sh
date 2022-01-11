@@ -21,7 +21,7 @@ readonly HTTP_SETTING_NAME="setting"
 readonly BACKEND_POOL_NAME="aks-service"
 readonly RULE_NAME="laapi-${ENV_NAME}-rule"
 
-./../scripts/update-agw-url-path-map.sh \
+bash ./../scripts/update-agw-url-path-map.sh \
   "${SUBSCRIPTION_CODE}" \
   "${ROUTING_PATH}" \
   "${HTTP_SETTING_NAME}" \
@@ -38,7 +38,7 @@ readonly LISTENER_NAME="laapi-${ENV_NAME}-listener"
 readonly DEFAULT_URL_PATH_MAP_NAME="laapi-${ENV_NAME}-rule"
 
 # デフォルトのルール作成
-./../../scripts/lacmn/upsert-agw-rules.sh \
+bash ./../../scripts/lacmn/upsert-agw-rules.sh \
   "${SUBSCRIPTION_CODE}" \
   "${HTTP_SETTING_NAME}" \
   "${BACKEND_POOL_NAME}" \

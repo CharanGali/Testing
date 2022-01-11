@@ -15,7 +15,7 @@ trap "popd" EXIT
 readonly SERVICE_CODE="agw"
 DEPLOYMENT_VERSION=$(git describe --always)
 read -ra SUBSCRIPTION_OPTION <<< \
-  "$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
+  "$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
 
 RG_NAME_TO_BE="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-${SERVICE_CODE}"
 RG_EXISTS=$(az group exists "${SUBSCRIPTION_OPTION[@]}" -n "${RG_NAME_TO_BE}")
@@ -36,7 +36,7 @@ sed -e "s:__TO_BE_RAPLACED_KEY_VAULT_ID__:${KEY_VAULT_ID}:g" \
        ../parameters/application-gateway.jsonc > "${PARAM_JSON_TMP_FILE}"
 
 # Create Resource Group and get its name
-RG_NAME=$(./create-resource-group.sh "${ENV_NAME}" "${REGION_CODE}" "${SUBSCRIPTION_CODE}" "${APP_CODE}" "${SERVICE_CODE}" | sed -ne "s/^RESOURCE_GROUP_NAME=\(.*\)$/\1/p")
+RG_NAME=$(bash ./create-resource-group.sh "${ENV_NAME}" "${REGION_CODE}" "${SUBSCRIPTION_CODE}" "${APP_CODE}" "${SERVICE_CODE}" | sed -ne "s/^RESOURCE_GROUP_NAME=\(.*\)$/\1/p")
 
 # shellcheck disable=SC2086
 az deployment group create \

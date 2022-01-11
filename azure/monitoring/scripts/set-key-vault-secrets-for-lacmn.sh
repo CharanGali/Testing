@@ -17,9 +17,9 @@ trap "popd" EXIT
 set +vx
 # Key Vault名の取得
 readonly KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-KEY_VAULT_ID=$(./../../scripts/get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
+KEY_VAULT_ID=$(bash ./../../scripts/get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
 KEY_VAULT_NAME=$(basename "${KEY_VAULT_ID}")
 
-./../../scripts/set-key-vault-secret.sh "$OPSGENIE_KEY_NAME" "$OPSGENIE_KEY_VALUE" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
+bash ./../../scripts/set-key-vault-secret.sh "$OPSGENIE_KEY_NAME" "$OPSGENIE_KEY_VALUE" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
 
 set -vx

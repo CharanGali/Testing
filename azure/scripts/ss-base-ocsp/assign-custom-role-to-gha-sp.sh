@@ -12,8 +12,8 @@ readonly APP_CODE=$3
 pushd "$(dirname "$0")"
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(../build-subscription-option.sh "${SUBSCRIPTION_CODE}")
-SUBSCRIPTION_ID=$(../get-subscription-id.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ../build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_ID=$(bash ../get-subscription-id.sh "${SUBSCRIPTION_CODE}")
 
 readonly REPO="ss-base-ocsp"
 readonly USAGE="gha-${REPO}"

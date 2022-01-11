@@ -11,7 +11,7 @@ readonly RG_NAME=$2
 pushd $(dirname $0)
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 # Delete resource group
 az group delete ${SUBSCRIPTION_OPTION} --name ${RG_NAME} --yes

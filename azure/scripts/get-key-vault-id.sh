@@ -12,7 +12,7 @@ readonly KV_RG_NAME=$2
 pushd $(dirname $0) > /dev/null
 trap "popd > /dev/null" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 KEY_VAULT_ID=($( \
   az resource list \

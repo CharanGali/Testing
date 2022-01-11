@@ -19,11 +19,11 @@ readonly WAF_RG_NAME=${10:-}
 pushd "$(dirname "$0")"
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 WAF_OPTION=""
 if [ -n "${WAF_NAME}" ]; then
-  WAF_POLICY_ID=$(./get-waf-policy-id.sh "${SUBSCRIPTION_CODE}" "${WAF_RG_NAME}" "${WAF_NAME}")
+  WAF_POLICY_ID=$(bash ./get-waf-policy-id.sh "${SUBSCRIPTION_CODE}" "${WAF_RG_NAME}" "${WAF_NAME}")
   WAF_OPTION="--waf-policy ${WAF_POLICY_ID}"
 fi
 

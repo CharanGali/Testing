@@ -12,11 +12,11 @@ readonly APP_CODE=$3
 pushd $(dirname $0)
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 # Key Vault名の取得
 readonly KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-KEY_VAULT_ID=$(./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
+KEY_VAULT_ID=$(bash ./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
 KEY_VAULT_NAME=$(basename "${KEY_VAULT_ID}")
 
 set +vx
@@ -40,10 +40,10 @@ do
     PASSWORD="$(echo ${SP_JSON} | jq -r .password)"
     TENANT="$(echo ${SP_JSON} | jq -r .tenant)"
     # KeyVaultへの登録
-    ./set-key-vault-secret.sh "sp-${USAGE}-appId" "$APP_ID" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
-    ./set-key-vault-secret.sh "sp-${USAGE}-displayName" "$DISPLAY_NAME" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
-    ./set-key-vault-secret.sh "sp-${USAGE}-password" "$PASSWORD" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
-    ./set-key-vault-secret.sh "sp-${USAGE}-tenant" "$TENANT" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
+    bash ./set-key-vault-secret.sh "sp-${USAGE}-appId" "$APP_ID" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
+    bash ./set-key-vault-secret.sh "sp-${USAGE}-displayName" "$DISPLAY_NAME" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
+    bash ./set-key-vault-secret.sh "sp-${USAGE}-password" "$PASSWORD" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
+    bash ./set-key-vault-secret.sh "sp-${USAGE}-tenant" "$TENANT" "$SUBSCRIPTION_CODE" "$KEY_VAULT_NAME"
     unset SP_JSON APP_ID DISPLAY_NAME PASSWORD TENANT
   fi
 done

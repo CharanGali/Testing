@@ -17,7 +17,7 @@ readonly BACKEND_POOL_NAME=${8:-"backend-pool-${SUBSCRIPTION_CODE}-${MODULE_NAME
 pushd "$(dirname "$0")"
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(../scripts/build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ../scripts/build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 if [[ ${MODULE_NAME} == la ]]; then
   # AKS nodeのPublic IPアドレス取得
@@ -50,7 +50,7 @@ else
 fi
 
 echo '----------- create additonal AGW WAF policies -----------'
-../scripts/create-agw-waf-policies.sh \
+bash ../scripts/create-agw-waf-policies.sh \
   "${ENV_NAME}" \
   "${MODULE_NAME}" \
   "${IP_LIST}" \
@@ -66,7 +66,7 @@ readonly WAF_NAME="wgf${SUBSCRIPTION_CODE}${ENV_NAME}${APP_CODE}${MODULE_NAME}wa
 readonly WAF_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-wgf"
 
 echo '----------- associate WAF policies with AGW -----------'
-../scripts/associate-waf-policies-with-agw.sh \
+bash ../scripts/associate-waf-policies-with-agw.sh \
   "${SUBSCRIPTION_CODE}" \
   "${ROUTING_PATH}" \
   "${HTTP_SETTING_NAME}" \

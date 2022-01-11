@@ -15,7 +15,7 @@ pushd "$(dirname "$0")"
 trap "popd" EXIT
 
 DEPLOYMENT_VERSION=$(git describe --always)
-SUBSCRIPTION_OPTION=$(../build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ../build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 readonly REPO="ss-base-dps"
 DEPLOYMENT_NAME="${SUBSCRIPTION_CODE}-${APP_CODE}-${ENV_NAME}-gha-sp-custom-role-${REPO}"

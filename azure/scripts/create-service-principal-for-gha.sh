@@ -13,8 +13,8 @@ readonly APP_CODE=$4
 pushd $(dirname $0)
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh ${SUBSCRIPTION_CODE})
-SUBSCRIPTION_ID=$(./get-subscription-id.sh ${SUBSCRIPTION_CODE})
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh ${SUBSCRIPTION_CODE})
+SUBSCRIPTION_ID=$(bash ./get-subscription-id.sh ${SUBSCRIPTION_CODE})
 
 readonly USAGE="gha"
 # naming rule: sp-{Subscription}-{Environment}-{Application}-{Usage}
@@ -42,11 +42,11 @@ TENANT="$(echo "${SP_JSON}" | jq -r .tenantId)"
 
 # Key Vaultへの登録
 readonly SHARED_KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-KEY_VAULT_ID=$(./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${SHARED_KV_RG_NAME})
+KEY_VAULT_ID=$(bash ./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${SHARED_KV_RG_NAME})
 KEY_VAULT_NAME=$(basename "${KEY_VAULT_ID}")
 
 add_secret_to_key_vault() {
-  ./set-key-vault-secret.sh "$1" "$2" "${SUBSCRIPTION_CODE}" "${KEY_VAULT_NAME}" > /dev/null
+  bash ./set-key-vault-secret.sh "$1" "$2" "${SUBSCRIPTION_CODE}" "${KEY_VAULT_NAME}" > /dev/null
 }
 
 add_secret_to_key_vault "sp-${USAGE}-appId"       "${APP_ID}"

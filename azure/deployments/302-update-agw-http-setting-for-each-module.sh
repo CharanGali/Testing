@@ -24,7 +24,7 @@ readonly TIMEOUT=240
 readonly AGW_NAME="agw-${SUBSCRIPTION_CODE}-cmn-${APP_CODE}-${REGION_CODE}"
 readonly AGW_RG_NAME="rg-${SUBSCRIPTION_CODE}-cmn-${APP_CODE}-agw"
 
-./../scripts/update-agw-http-settings.sh \
+bash ./../scripts/update-agw-http-settings.sh \
   "${SUBSCRIPTION_CODE}" \
   "${HTTP_SETTING_NAME}" \
   "${BACKEND_PORT}" \

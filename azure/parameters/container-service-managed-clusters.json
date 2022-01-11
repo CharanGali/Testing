@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "kubernetesVersion": {
+      "value": {
+        "prd": "1.20.9",
+        "dev": "1.20.9",
+        "default": "1.20.9"
+      }
+    },
+    "agentPoolProfiles": {
+      "value": {
+        "prd": {
+          "osDiskSizeGB": 0,
+          "count": 3,
+          "vmSize": "Standard_DS2_v2",
+          "orchestratorVersion": "1.20.9",
+          "availabilityZones": [
+            "1",
+            "2"
+          ]
+        },
+        "dev": {
+          "osDiskSizeGB": 0,
+          "count": 3,
+          "vmSize": "Standard_DS2_v2",
+          "orchestratorVersion": "1.20.9",
+          "availabilityZones": [
+            "1",
+            "2"
+          ]
+        },
+        "default": {
+          "osDiskSizeGB": 0,
+          "count": 3,
+          "vmSize": "Standard_DS2_v2",
+          "orchestratorVersion": "1.20.9",
+          "availabilityZones": [
+            "1",
+            "2"
+          ]
+        }
+      }
+    }
+  }
+}

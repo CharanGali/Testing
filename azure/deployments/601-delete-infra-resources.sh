@@ -14,14 +14,14 @@ readonly DNS_ZONE=${5:-"aitrios.sony-semicon.co.jp"}
 pushd "$(dirname "$0")"
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./../scripts/build-subscription-option.sh "${SUBSCRIPTION_CODE}")
-SUBSCRIPTION_ID=$(./../scripts/get-subscription-id.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./../scripts/build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_ID=$(bash ./../scripts/get-subscription-id.sh "${SUBSCRIPTION_CODE}")
 
 readonly AKS_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-aks"
 rgExists=$(az group exists ${SUBSCRIPTION_OPTION} -n "${AKS_RG_NAME}")
 if [[ "$rgExists" == true ]]; then
   echo '----------- drop sql database and users -----------'
-  ./../scripts/drop-db-and-users.sh "${ENV_NAME}" "${REGION_CODE}" "${SUBSCRIPTION_CODE}" "${APP_CODE}"
+  bash ./../scripts/drop-db-and-users.sh "${ENV_NAME}" "${REGION_CODE}" "${SUBSCRIPTION_CODE}" "${APP_CODE}"
 fi
 
 readonly TARGET_RG_PFX="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}"
@@ -37,7 +37,7 @@ readonly WAF_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-wgf"
 rgExists=$(az group exists ${SUBSCRIPTION_OPTION} -n "${WAF_RG_NAME}")
 if [[ "$rgExists" == true ]]; then
   for MODULE_NAME in {la,dps}; do
-    ../scripts/associate-waf-policies-with-agw.sh \
+    bash ../scripts/associate-waf-policies-with-agw.sh \
       "${SUBSCRIPTION_CODE}" \
       "/${MODULE_NAME}/*" \
       "http-setting-${SUBSCRIPTION_CODE}-${MODULE_NAME}-${ENV_NAME}" \
@@ -52,14 +52,14 @@ if [[ "$rgExists" == true ]]; then
 fi
 
 readonly KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-KEY_VAULT_ID=$(./../scripts/get-key-vault-id.sh "${SUBSCRIPTION_CODE}" "${KV_RG_NAME}" || true)
+KEY_VAULT_ID=$(bash ./../scripts/get-key-vault-id.sh "${SUBSCRIPTION_CODE}" "${KV_RG_NAME}" || true)
 
 mapfile -t RESOURCE_GROUPS < <( \
   az group list ${SUBSCRIPTION_OPTION} --query "[?contains(name, '${TARGET_RG_PFX}')].name" -o tsv
 )
 for RESOURCE_GROUP in "${RESOURCE_GROUPS[@]}"
 do
-  ./../scripts/delete-resource-group.sh "${SUBSCRIPTION_CODE}" "${RESOURCE_GROUP}" || true
+  bash ./../scripts/delete-resource-group.sh "${SUBSCRIPTION_CODE}" "${RESOURCE_GROUP}" || true
 done
 
 if [[ -n $KEY_VAULT_ID ]]; then
@@ -109,7 +109,7 @@ do
 done
 
 for MODULE_NAME in {la,dps,ocsp}; do
-  ../scripts/delete-agw-path-based-rule.sh \
+  bash ../scripts/delete-agw-path-based-rule.sh \
     "${SUBSCRIPTION_CODE}" \
     "path-based-rule-${SUBSCRIPTION_CODE}-${MODULE_NAME}-${ENV_NAME}" \
     "laapi-${ENV_NAME}-rule" \
@@ -117,20 +117,20 @@ for MODULE_NAME in {la,dps,ocsp}; do
     "${AGW_RG_NAME}"
 done
 
-../scripts/delete-agw-rules.sh \
+bash ../scripts/delete-agw-rules.sh \
   "${SUBSCRIPTION_CODE}" \
   "laapi-${ENV_NAME}-rule" \
   "${AGW_NAME}" \
   "${AGW_RG_NAME}"
 
-../scripts/delete-agw-listeners.sh \
+bash ../scripts/delete-agw-listeners.sh \
   "${SUBSCRIPTION_CODE}" \
   "laapi-${ENV_NAME}-listener" \
   "${AGW_NAME}" \
   "${AGW_RG_NAME}"
 
 for MODULE_NAME in {la,dps,ocsp}; do
-  ../scripts/delete-agw-http-settings.sh \
+  bash ../scripts/delete-agw-http-settings.sh \
     "${SUBSCRIPTION_CODE}" \
     "http-setting-${SUBSCRIPTION_CODE}-${MODULE_NAME}-${ENV_NAME}" \
     "${AGW_NAME}" \
@@ -138,7 +138,7 @@ for MODULE_NAME in {la,dps,ocsp}; do
 done
 
 for MODULE_NAME in {la,dps,ocsp}; do
-  ../scripts/delete-agw-backend-pool.sh \
+  bash ../scripts/delete-agw-backend-pool.sh \
     "${SUBSCRIPTION_CODE}" \
     "backend-pool-${SUBSCRIPTION_CODE}-${MODULE_NAME}-${ENV_NAME}" \
     "${AGW_NAME}" \

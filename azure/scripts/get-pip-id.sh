@@ -13,7 +13,7 @@ pushd "$(dirname "$0")" > /dev/null
 trap "popd > /dev/null" EXIT
 
 read -ra SUBSCRIPTION_OPTION <<< \
- "$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
+ "$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
 
 az resource list \
   "${SUBSCRIPTION_OPTION[@]}" \

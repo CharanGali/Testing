@@ -16,12 +16,12 @@ trap "popd" EXIT
 TEMPLATE_DIR="./../templates/"
 PARAMETER_DIR="./../parameters/"
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 DEPLOYMENT_VERSION=$(git describe --always)
 
 # Create resource group for key vault
 readonly SERVICE_CODE="kv"
-KV_RG_NAME=$(./create-resource-group.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${SERVICE_CODE} | sed -ne "s/^RESOURCE_GROUP_NAME=\(.*\)$/\1/p")
+KV_RG_NAME=$(bash ./create-resource-group.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${SERVICE_CODE} | sed -ne "s/^RESOURCE_GROUP_NAME=\(.*\)$/\1/p")
 
 SECRET_OFFICER_OBJECT_IDS=$(\
   az ad sp list \

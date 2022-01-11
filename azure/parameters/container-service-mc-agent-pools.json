@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "properties": {
+      "value": {
+        "prd": {
+          "osDiskSizeGB": 0,
+          "count": 3,
+          "vmSize": "Standard_DS2_v2",
+          "orchestratorVersion": "1.20.9",
+          "availabilityZones": [
+            "1",
+            "2"
+          ],
+          "enableFIPS": false,
+          "maxPods": 30
+        },
+        "dev": {
+          "osDiskSizeGB": 0,
+          "count": 3,
+          "vmSize": "Standard_DS2_v2",
+          "orchestratorVersion": "1.20.9",
+          "availabilityZones": [
+            "1",
+            "2"
+          ],
+          "enableFIPS": false,
+          "maxPods": 30
+        },
+        "default": {
+          "osDiskSizeGB": 0,
+          "count": 3,
+          "vmSize": "Standard_DS2_v2",
+          "orchestratorVersion": "1.20.9",
+          "availabilityZones": [
+            "1",
+            "2"
+          ],
+          "enableFIPS": false,
+          "maxPods": 30
+        }
+      }
+    }
+  }
+}

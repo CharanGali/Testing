@@ -14,7 +14,7 @@ pushd "$(dirname "$0")"
 trap "popd" EXIT
 
 read -ra SUBSCRIPTION_OPTION <<< \
-  "$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
+  "$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
 BLOB_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-st-blob-agw-backup"
 BLOB_ID=$(./get-storage-account-id.sh "${SUBSCRIPTION_CODE}" \
   "${BLOB_RG_NAME}")

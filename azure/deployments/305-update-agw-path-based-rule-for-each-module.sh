@@ -24,7 +24,7 @@ readonly PATH_MAP_NAME="laapi-${ENV_NAME}-rule"
 readonly AGW_NAME="agw-${SUBSCRIPTION_CODE}-cmn-${APP_CODE}-${REGION_CODE}"
 readonly AGW_RG_NAME="rg-${SUBSCRIPTION_CODE}-cmn-${APP_CODE}-agw"
 
-./../scripts/update-agw-path-based-rule.sh \
+bash ./../scripts/update-agw-path-based-rule.sh \
   "${SUBSCRIPTION_CODE}" \
   "${ROUTING_PATH}" \
   "${HTTP_SETTING_NAME}" \

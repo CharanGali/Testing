@@ -17,7 +17,7 @@ trap "popd" EXIT
 
 readonly SERVICE_CODE="agw"
 read -ra SUBSCRIPTION_OPTION <<< \
-  "$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
+  "$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
 
 RG_NAME_TO_BE="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-${SERVICE_CODE}"
 RG_EXISTS=$(az group exists "${SUBSCRIPTION_OPTION[@]}" -n "${RG_NAME_TO_BE}")
@@ -33,10 +33,10 @@ fi
 readonly CMN_ENV_NAME=cmn
 readonly CMN_APP_CODE=main
 readonly KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-KEY_VAULT_ID=$(./get-key-vault-id.sh "${SUBSCRIPTION_CODE}" "${KV_RG_NAME}")
+KEY_VAULT_ID=$(bash ./get-key-vault-id.sh "${SUBSCRIPTION_CODE}" "${KV_RG_NAME}")
 
 # Create Resource Group and get its name
-RG_NAME=$(./create-resource-group.sh \
+RG_NAME=$(bash ./create-resource-group.sh \
   "${ENV_NAME}" \
   "${REGION_CODE}" \
   "${SUBSCRIPTION_CODE}" \

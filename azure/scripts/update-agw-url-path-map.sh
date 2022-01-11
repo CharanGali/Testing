@@ -18,7 +18,7 @@ readonly AGW_RG_NAME=$9
 pushd "$(dirname "$0")"
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 echo "create or update url path map"
 az network application-gateway url-path-map create \

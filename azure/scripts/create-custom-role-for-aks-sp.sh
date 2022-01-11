@@ -44,7 +44,7 @@ pushd $(dirname $0)
 trap "popd" EXIT
 
 DEPLOYMENT_VERSION=$(git describe --always)
-SUBSCRIPTION_OPTION=$(./../tools/build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 DEPLOYMENT_NAME="${SUBSCRIPTION_CODE}-${APP_CODE}-${ENV_NAME}-aks-sp-custom-role"
 # Custom Roleはサブスクリプション単位で構築するリソース
@@ -53,7 +53,7 @@ az deployment sub create \
   ${SUBSCRIPTION_OPTION} \
   --location ${REGION_CODE} \
   --name ${DEPLOYMENT_NAME} \
-  --template-file ../../templates/lacmn/custom-role-for-aks-sp.json \
+  --template-file ../templates/custom-role-for-aks-sp.json \
   --parameters \
     env=${ENV_NAME} \
     regionCode=${REGION_CODE} \

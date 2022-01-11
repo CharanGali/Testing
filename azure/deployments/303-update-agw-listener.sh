@@ -37,7 +37,7 @@ readonly FRONTEND_PORT="httpsPort"
 readonly CMN_WAF_NAME="wgf${SUBSCRIPTION_CODE}cmn${APP_CODE}waf${REGION_CODE}"
 readonly CMN_WAF_RG_NAME="rg-${SUBSCRIPTION_CODE}-cmn-${APP_CODE}-wgf"
 
-./../scripts/update-agw-listeners.sh \
+bash ./../scripts/update-agw-listeners.sh \
   "${SUBSCRIPTION_CODE}" \
   "${LISTENER_NAME}" \
   "${FRONTEND_IP}" \

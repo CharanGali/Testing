@@ -16,7 +16,7 @@ trap "popd" EXIT
 
 # KeyVaultsへのシークレット登録
 echo '----------- set secrets to key vault -----------'
-./../scripts/set-key-vault-secrets-for-acm.sh \
+bash ./../scripts/set-key-vault-secrets-for-acm.sh \
   ${ENV_NAME} \
   ${SUBSCRIPTION_CODE} \
   ${APP_CODE} \

@@ -1,0 +1,130 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "properties": {
+      "type": "object"
+    }
+  },
+  "variables": {
+    // envType: fdv-xxxx の形式だと"fdv", それ以外はenvと同じ値
+    "envType": "[
+      if (
+        startsWith('fdv-', parameters('env')),
+        'fdv',
+        parameters('env')
+      )
+    ]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    "subsEnvApp": "[
+      concat(
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode')
+      )
+    ]",
+    "vnetResourceGroupName": "[
+      concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-cmn-main-vnet'
+      )
+    ]",
+    // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "vnetName": "[
+      concat(
+        'vnet-',
+        parameters('subscriptionCode'),
+        '-cmn-main-vnet-',
+        parameters('regionCode')
+      )
+    ]",
+    // naming rule: snet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "subnetNameAks": "[
+      concat(
+        'snet-',
+        parameters('subscriptionCode'),
+        '-cmn-main-aks-',
+        parameters('regionCode')
+      )
+    ]",
+    // naming rule: aks-{Subscription}-{Environment}-{Application}-{Region}
+    "aksName": "[
+      concat(
+        'aks-',
+        variables('subsEnvApp'),
+        '-',
+        parameters('regionCode')
+      )
+    ]",
+    "vnetId": "[
+      resourceId(
+        variables('vnetResourceGroupName'),
+        'Microsoft.Network/virtualNetworks',
+        variables('vnetName')
+      )
+    ]",
+    "kubernetesSubnetId": "[
+      concat(
+        variables('vnetId'),
+        '/subnets/',
+        variables('subnetNameAks')
+      )
+    ]",
+    "thisEnvProperties": "[
+      if (
+        contains(parameters('properties'), variables('envType')),
+        parameters('properties')[variables('envType')],
+        parameters('properties')['default']
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerService/managedClusters/agentPools",
+      "apiVersion": "2021-03-01",
+      "name": "[concat(
+        variables('aksName'),
+        '/agentpool'
+      )]",
+      "tags": "[variables('tags')]",
+      "properties": {
+          "type": "VirtualMachineScaleSets",
+          "mode": "System",
+          "osType": "Linux",
+          "osDiskType": "Managed",
+          "nodeLabels": {},
+          "vnetSubnetID": "[variables('kubernetesSubnetId')]",
+          "osDiskSizeGB": "[variables('thisEnvProperties')['osDiskSizeGB']]",
+          "count": "[variables('thisEnvProperties')['count']]",
+          "vmSize": "[variables('thisEnvProperties')['vmSize']]",
+          "orchestratorVersion": "[variables('thisEnvProperties')['orchestratorVersion']]",
+          "availabilityZones": "[variables('thisEnvProperties')['availabilityZones']]",
+          "enableFIPS": "[variables('thisEnvProperties')['enableFIPS']]",
+          "maxPods": "[variables('thisEnvProperties')['maxPods']]"
+      }
+    }
+  ],
+  "outputs": {}
+}

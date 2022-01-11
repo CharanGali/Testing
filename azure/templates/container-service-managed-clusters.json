@@ -1,0 +1,187 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "servicePrincipalClientId": {
+      "type": "securestring"
+    },
+    "servicePrincipalClientSecret": {
+      "type": "securestring"
+    },
+    "kubernetesVersion": {
+      "type": "object"
+    },
+    "agentPoolProfiles": {
+      "type": "object"
+    },
+    "senIpList": { // SEN IPの配列
+      "type": "array"
+    }
+  },
+  "variables": {
+    // envType: fdv-xxxx の形式だと"fdv", それ以外はenvと同じ値
+    "envType": "[
+      if (
+        startsWith('fdv-', parameters('env')),
+        'fdv',
+        parameters('env')
+      )
+    ]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    "subsEnvApp": "[
+      concat(
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode')
+      )
+    ]",
+    "vnetResourceGroupName": "[
+      concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-cmn-main-vnet'
+      )
+    ]",
+    // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "vnetName": "[
+      concat(
+        'vnet-',
+        parameters('subscriptionCode'),
+        '-cmn-main-vnet-',
+        parameters('regionCode')
+      )
+    ]",
+    // naming rule: snet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "subnetNameAks": "[
+      concat(
+        'snet-',
+        parameters('subscriptionCode'),
+        '-cmn-main-aks-',
+        parameters('regionCode')
+      )
+    ]",
+    // naming rule: aks-{Subscription}-{Environment}-{Application}-{Region}
+    "aksName": "[
+      concat(
+        'aks-',
+        variables('subsEnvApp'),
+        '-',
+        parameters('regionCode')
+      )
+    ]",
+    "vnetId": "[
+      resourceId(
+        variables('vnetResourceGroupName'),
+        'Microsoft.Network/virtualNetworks',
+        variables('vnetName')
+      )
+    ]",
+    "kubernetesSubnetId": "[
+      concat(
+        variables('vnetId'),
+        '/subnets/',
+        variables('subnetNameAks')
+      )
+    ]",
+    // naming rule: rg-{Subscription}-{Environment}-{Application}-{Service}
+    "nodeResourceGroupName": "[
+      concat(
+        'rg-',
+        variables('subsEnvApp'),
+        '-node'
+      )
+    ]",
+    "thisEnvKubernetesVersion": "[
+      if (
+        contains(parameters('kubernetesVersion'), variables('envType')),
+        parameters('kubernetesVersion')[variables('envType')],
+        parameters('kubernetesVersion')['default']
+      )
+    ]",
+    "thisEnvAgentPoolProfiles": "[
+      if (
+        contains(parameters('agentPoolProfiles'), variables('envType')),
+        parameters('agentPoolProfiles')[variables('envType')],
+        parameters('agentPoolProfiles')['default']
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2020-03-01",
+      "type": "Microsoft.ContainerService/managedClusters",
+      "location": "[parameters('regionCode')]",
+      "name": "[variables('aksName')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "nodeResourceGroup": "[variables('nodeResourceGroupName')]",
+        "kubernetesVersion": "[variables('thisEnvKubernetesVersion')]",
+        "dnsPrefix": "aks",
+        "agentPoolProfiles": [
+          {
+            "name": "agentpool",
+            "type": "VirtualMachineScaleSets",
+            "mode": "System",
+            "osType": "Linux",
+            "storageProfile": "ManagedDisks",
+            "vnetSubnetID": "[variables('kubernetesSubnetId')]",
+            "osDiskSizeGB": "[variables('thisEnvAgentPoolProfiles')['osDiskSizeGB']]",
+            "count": "[variables('thisEnvAgentPoolProfiles')['count']]",
+            "vmSize": "[variables('thisEnvAgentPoolProfiles')['vmSize']]",
+            "orchestratorVersion": "[variables('thisEnvAgentPoolProfiles')['orchestratorVersion']]",
+            "availabilityZones": "[variables('thisEnvAgentPoolProfiles')['availabilityZones']]",
+            "tags": "[variables('tags')]"
+          }
+        ],
+        "servicePrincipalProfile": {
+          "clientId": "[parameters('servicePrincipalClientId')]",
+          "secret": "[parameters('servicePrincipalClientSecret')]"
+        },
+        "networkProfile": {
+          "loadBalancerSku": "Standard",
+          "networkPlugin": "azure",
+          "serviceCidr": "172.16.0.0/16",
+          "dnsServiceIP": "172.16.0.10",
+          "dockerBridgeCidr": "172.18.0.1/16"
+        },
+        "apiServerAccessProfile": {
+          "authorizedIPRanges": "[parameters('senIpList')]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "aksRg": {
+      "type": "string",
+      "value": "[
+        reference(
+          resourceId(
+            'Microsoft.ContainerService/managedClusters',
+            variables('aksName')
+          )
+        ).nodeResourceGroup
+      ]"
+    }
+  }
+}

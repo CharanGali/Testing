@@ -17,12 +17,12 @@ readonly SERVICE_CODE="vnet"
 DEPLOYMENT_VERSION=$(git describe --always)
 
 # Create Resource Group and get its name
-RG_NAME=$(./create-resource-group.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${SERVICE_CODE} | sed -ne "s/^RESOURCE_GROUP_NAME=\(.*\)$/\1/p")
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+RG_NAME=$(bash ./create-resource-group.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${SERVICE_CODE} | sed -ne "s/^RESOURCE_GROUP_NAME=\(.*\)$/\1/p")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 # fetch Ddos Protection Plan Id
 SUBSCRIPTION_CODE_FOR_DDOS_PROTECTION_PLAN=gcssredev
-SUBSCRIPTION_OPTION_FOR_DDOS_PROTECTION_PLAN=$(./build-subscription-option.sh ${SUBSCRIPTION_CODE_FOR_DDOS_PROTECTION_PLAN})
+SUBSCRIPTION_OPTION_FOR_DDOS_PROTECTION_PLAN=$(bash ./build-subscription-option.sh ${SUBSCRIPTION_CODE_FOR_DDOS_PROTECTION_PLAN})
 DDOS_PROTECTION_PLAN_ID=$(az network ddos-protection list ${SUBSCRIPTION_OPTION_FOR_DDOS_PROTECTION_PLAN} | jq -r .[].id)
 
 az deployment group create \

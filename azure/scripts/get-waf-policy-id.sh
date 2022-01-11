@@ -13,7 +13,7 @@ readonly WAF_NAME=${3:?}
 pushd "$(dirname "$0")" > /dev/null
 trap "popd > /dev/null" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 # リソースグループに含まれるWAF policyを一覧取得して、該当するWAF policy名のIDを抽出する
 # shellcheck disable=SC2086

@@ -6,7 +6,7 @@ readonly KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
 
 pushd $(dirname $0)
 
-KEY_VAULT_ID=$(./../../scripts/get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
+KEY_VAULT_ID=$(bash ./../../scripts/get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
 
 OPSGENIE_API_KEY_PARAM_JSON_TMP_FILE=$(mktemp)
 METRICS_OPSGENIE_ENDPOINT_PARAM_JSON_TMP_FILE=$(mktemp)

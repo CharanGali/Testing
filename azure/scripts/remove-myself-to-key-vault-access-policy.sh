@@ -10,11 +10,11 @@ readonly KV_RG_NAME=$2
 
 pushd $(dirname $0)
 # Key Vault名の取得
-KEY_VAULT_ID=$(./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
+KEY_VAULT_ID=$(bash ./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
 KEY_VAULT_NAME=$(basename "${KEY_VAULT_ID}")
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 if [ -n "${CI:-}" ]; then
   : 

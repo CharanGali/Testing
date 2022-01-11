@@ -12,9 +12,9 @@ pushd "$(dirname "$0")" >/dev/null
 trap "popd > /dev/null" EXIT
 
 read -ra SUBSCRIPTION_OPTION <<< \
-  "$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
+  "$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")"
 
-ST_CONNSTR=$(./get-storage-account-connstr.sh \
+ST_CONNSTR=$(bash ./get-storage-account-connstr.sh \
   "${SUBSCRIPTION_CODE}" \
   "${ST_RG_NAME}"
 )

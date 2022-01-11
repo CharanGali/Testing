@@ -13,8 +13,8 @@ readonly APP_CODE=$4
 pushd $(dirname $0)
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh ${SUBSCRIPTION_CODE})
-SUBSCRIPTION_ID=$(./get-subscription-id.sh ${SUBSCRIPTION_CODE})
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh ${SUBSCRIPTION_CODE})
+SUBSCRIPTION_ID=$(bash ./get-subscription-id.sh ${SUBSCRIPTION_CODE})
 
 USAGE="gha"
 SERVICE_PRINCIPAL_NANE="sp-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-${USAGE}"

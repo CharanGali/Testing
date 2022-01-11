@@ -11,7 +11,7 @@ export SUBSCRIPTION_CODE=$3
 export APP_CODE=${4:-main}
 
 pushd $(dirname $0)
-SUBSCRIPTION_OPTION=$(../../scripts/build-subscription-option.sh "${SUBSCRIPTION_CODE}"); export SUBSCRIPTION_OPTION
+SUBSCRIPTION_OPTION=$(bash ../../scripts/build-subscription-option.sh "${SUBSCRIPTION_CODE}"); export SUBSCRIPTION_OPTION
 export MONITOR_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-monitor"
 export TARGET_AKS_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-aks"
 

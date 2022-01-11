@@ -22,4 +22,4 @@ readonly COMMON_DEPLOYMENT_OPTIONS="
 
 echo '----------- create sql database user -----------'
 # shellcheck disable=SC2086
-./../scripts/create-databases-and-users.sh ${COMMON_DEPLOYMENT_OPTIONS}
+bash ./../scripts/create-databases-and-users.sh ${COMMON_DEPLOYMENT_OPTIONS}

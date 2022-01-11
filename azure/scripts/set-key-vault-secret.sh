@@ -15,7 +15,7 @@ readonly KEY_VAULT_NAME=$4
 pushd "$(dirname "$0")"
 trap "popd" EXIT
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 # shellcheck disable=SC2086
 az keyvault secret set \

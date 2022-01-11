@@ -18,10 +18,10 @@ if [ -n "${CI-}" ]; then
   az aks install-cli
 fi
 
-SUBSCRIPTION_OPTION=$(./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 
 readonly CMN_KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-CMN_KEY_VAULT_ID=$(./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${CMN_KV_RG_NAME})
+CMN_KEY_VAULT_ID=$(bash ./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${CMN_KV_RG_NAME})
 CMN_KEY_VAULT_NAME=$(basename "${CMN_KEY_VAULT_ID}")
 
 get_secret_from_cmn_key_vault() {
@@ -29,11 +29,11 @@ get_secret_from_cmn_key_vault() {
 }
 
 readonly KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
-KEY_VAULT_ID=$(./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
+KEY_VAULT_ID=$(bash ./get-key-vault-id.sh ${SUBSCRIPTION_CODE} ${KV_RG_NAME})
 KEY_VAULT_NAME=$(basename "${KEY_VAULT_ID}")
 
 add_secret_to_key_vault() {
-  ./set-key-vault-secret.sh "$1" "$2" "${SUBSCRIPTION_CODE}" "${KEY_VAULT_NAME}" > /dev/null
+  bash ./set-key-vault-secret.sh "$1" "$2" "${SUBSCRIPTION_CODE}" "${KEY_VAULT_NAME}" > /dev/null
 }
 
 IS_MY_SQL_USER_DEFINED=$( \

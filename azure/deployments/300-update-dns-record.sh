@@ -31,7 +31,7 @@ else
 fi
 
 # Public IPアドレス取得
-SUBSCRIPTION_OPTION=$(./../scripts/build-subscription-option.sh "${SUBSCRIPTION_CODE}")
+SUBSCRIPTION_OPTION=$(bash ./../scripts/build-subscription-option.sh "${SUBSCRIPTION_CODE}")
 PIP_RG_NAME="rg-${SUBSCRIPTION_CODE}-cmn-${APP_CODE}-pip"
 # shellcheck disable=SC2086
 PUBLIC_IP=$(\
@@ -42,7 +42,7 @@ PUBLIC_IP=$(\
   --output tsv \
 )
 
-./../scripts/update-public-ip-to-dns.sh \
+bash ./../scripts/update-public-ip-to-dns.sh \
   "${DNS_ZONE}" \
   "${SUB_DOMAIN}" \
   "${PUBLIC_IP}" \
