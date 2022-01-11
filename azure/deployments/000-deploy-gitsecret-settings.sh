@@ -8,6 +8,9 @@ readonly REGION_CODE=${2:-japaneast}
 readonly ENV_NAME=${3:-dev}
 readonly APP_CODE=${4:-lacmn}
 
+pushd $(dirname $0)
+trap "popd" EXIT
+
 readonly COMMON_DEPLOYMENT_OPTIONS="
   ${ENV_NAME}
   ${REGION_CODE}
