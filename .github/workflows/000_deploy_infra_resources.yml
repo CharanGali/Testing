@@ -59,7 +59,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/000-deploy-lacmn-key-vault.sh \
+            bash ./azure/deployments/000-deploy-lacmn-key-vault.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \
@@ -70,7 +70,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/001-deploy-sql-secret-settings.sh \
+            bash ./azure/deployments/001-deploy-sql-secret-settings.sh \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.env_name }}" \
@@ -81,7 +81,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/002-deploy-vnet-sql-cr-resources.sh \
+            bash ./azure/deployments/002-deploy-vnet-sql-cr-resources.sh \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.env_name }}" \
@@ -92,7 +92,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/003-deploy-github-secret-settings \
+            bash ./azure/deployments/003-deploy-github-secret-settings.sh \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.env_name }}" \
@@ -103,7 +103,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/004-deploy-agw-resources.sh \
+            bash ./azure/deployments/004-deploy-agw-resources.sh \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.env_name }}" \
@@ -117,7 +117,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/005-deploy-lacmn-app-auth-settings.sh \
+            bash ./azure/deployments/005-deploy-lacmn-app-auth-settings.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.app_code }}"
@@ -127,7 +127,7 @@ jobs:
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            ./azure/deployments/006-deploy-aks-resources.sh \
+            bash ./azure/deployments/006-deploy-aks-resources.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \
