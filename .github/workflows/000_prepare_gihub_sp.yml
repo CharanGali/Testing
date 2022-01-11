@@ -40,10 +40,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: STEP 000
-        uses: azure/CLI@v1
-        with:
-          azcliversion: ${{ env.AZ_CLI_VERSION }}
-          inlineScript: |
+        run: |
             bash ./azure/deployments/000-deploy-gitsecret-settings.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
