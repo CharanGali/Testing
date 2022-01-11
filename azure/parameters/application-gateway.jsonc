@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "wafMode": {
+      "value": "Prevention" // "Detection" or "Prevention" ただしWAFの値が優先される
+    },
+    "agwMinCapacity": {
+      "value": 0
+    },
+    "agwMaxCapacity": {
+      "value": 2
+    },
+    "applicationGatewaySku": {
+      "value": "Standard_v2" // "Standard_v2" or "WAF_v2"
+    },
+    "agwTlsCertificate": {
+      "reference": {
+        "keyVault": {
+          "id": "__TO_BE_RAPLACED_KEY_VAULT_ID__"
+        },
+        "secretName": "agwTlsCertificate"
+      }
+    },
+    "agwTlsPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "__TO_BE_RAPLACED_KEY_VAULT_ID__"
+        },
+        "secretName": "agwTlsPassword"
+      }
+    }
+  }
+}

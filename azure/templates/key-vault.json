@@ -1,0 +1,358 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "skuName": {
+      "type": "string"
+    },
+    "usage": {
+      "type": "string",
+      "defaultValue":"shared"
+    },
+    "ipRules": {
+      "type": "array"
+    },
+    "secretOfficerObjectIds": {
+      "type": "array"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "infra",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]",
+      "confidentiality": "confidential"
+    },
+    // envType: fdv-xxxx の形式だと"fdv", それ以外はenvと同じ値
+    "envType": "[
+      if (
+        startsWith('fdv-', parameters('env')),
+        'fdv',
+        parameters('env')
+      )
+    ]",
+    // naming rule: kv-{Subscription}-{Environment}-{Usage}-{Region}
+    "tempKeyVaultName1": "[
+      concat(
+        'kv-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-',
+        parameters('usage'),
+        '-',
+        parameters('regionCode')
+      )
+    ]",
+    "tempKeyVaultName2": "[
+      if(
+        greater(length(variables('tempKeyVaultName1')), 24),
+        substring(variables('tempKeyVaultName1'), 0, 24),
+        variables('tempKeyVaultName1')
+      )
+    ]",
+    "keyVaultName": "[
+      if(
+        endsWith(variables('tempKeyVaultName2'), '-'),
+        substring(variables('tempKeyVaultName2'), 0, 23),
+        variables('tempKeyVaultName2')
+      )
+    ]",
+    "privateDnsZoneName": "privatelink.vaultcore.azure.net",
+    // naming rule: prep-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "privateEndpointName": "[
+      concat(
+        'prep-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-kv-',
+        parameters('regionCode')
+      )
+    ]",
+    "vnetResourceGroupName": "[
+      concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-cmn-main-vnet'
+      )
+    ]",
+    // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "vnetName": "[
+      concat(
+        'vnet-',
+        parameters('subscriptionCode'),
+        '-cmn-main-vnet-',
+        parameters('regionCode')
+      )
+    ]",
+    "vnetId": "[
+      resourceId(
+        variables('vnetResourceGroupName'),
+        'Microsoft.Network/virtualNetworks',
+        variables('vnetName')
+      )
+    ]",
+    // naming rule: snet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "subnetNamePrep": "[
+      concat(
+        'snet-',
+        parameters('subscriptionCode'),
+        '-cmn-main-prep-',
+        parameters('regionCode')
+      )
+    ]",
+    "prepSubnetRef": "[
+      concat(
+        variables('vnetId'),
+        '/subnets/',
+        variables('subnetNamePrep')
+      )
+    ]",
+    "privateDnsZoneGroupName": "[
+      concat(
+        variables('privateEndpointName'),
+        '/kvdnsgroupname'
+      )
+    ]",
+    "pdnszResourceGroupName": "[
+      concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-cmn-main-pdnsz'
+      )
+    ]",
+    // naming rule: role-{Subscription}-{Environment}-{Application}-{Usage}
+    // ユーザーフレンドリーな命名
+    "secretUserRoleName": "[
+      concat(
+        'role-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-sharedKvSecretUser'
+      )
+    ]",
+    // roleの名前（ID形式、roleNameで一意になるようにハッシュをID化する）
+    "secretUserRoleDefName": "[guid(variables('secretUserRoleName'))]",
+    // naming rule: role-{Subscription}-{Environment}-{Application}-{Usage}
+    // ユーザーフレンドリーな命名
+    "secretOfficerRoleName": "[
+      concat(
+        'role-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-sharedKvSecretOfficer'
+      )
+    ]",
+    // roleの名前（ID形式、roleNameで一意になるようにハッシュをID化する）
+    "secretOfficerRoleDefName": "[guid(variables('secretOfficerRoleName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2020-04-01-preview",
+      "name": "[variables('keyVaultName')]",
+      "location": "[parameters('regionCode')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "enabledForDeployment": false,
+        "enabledForDiskEncryption": false,
+        "enabledForTemplateDeployment": true,
+        "enablePurgeProtection": true,
+        "tenantId": "[subscription().tenantId]",
+        "enableRbacAuthorization": true,
+        "sku": {
+          "family": "A",
+          "name": "[parameters('skuName')]"
+        },
+        "networkAcls": {
+          "defaultAction": "Deny",
+          "bypass": "AzureServices",
+          "ipRules": "[parameters('ipRules')]"
+        }
+      }
+    },
+    {
+      "name": "[variables('secretUserRoleDefName')]",
+      "type": "Microsoft.Authorization/roleDefinitions",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ],
+      "apiVersion": "2018-07-01",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "roleName": "[variables('secretUserRoleName')]",
+        "description": "[
+          concat(
+            'Custom Role Definition for',
+            variables('keyVaultName'),
+            ' User'
+          )
+        ]",
+        "type": "customRole",
+        "isCustom": true,
+        "permissions": [
+          {
+            "actions": [],
+            "notActions": [],
+            "dataActions": [
+              "Microsoft.KeyVault/vaults/secrets/getSecret/action",
+              "Microsoft.KeyVault/vaults/secrets/readMetadata/action"
+            ],
+            "notDataActions": []
+          }
+        ],
+        "assignableScopes": [
+          "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+        ]
+      }
+    },
+    {
+      "name": "[variables('secretOfficerRoleDefName')]",
+      "type": "Microsoft.Authorization/roleDefinitions",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ],
+      "apiVersion": "2018-07-01",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "roleName": "[variables('secretOfficerRoleName')]",
+        "description": "[
+          concat(
+            'Custom Role Definition for',
+            variables('keyVaultName'),
+            ' Officer'
+          )
+        ]",
+        "type": "customRole",
+        "isCustom": true,
+        "permissions": [
+          {
+            "actions": [
+              "Microsoft.KeyVault/checkNameAvailability/read",
+              "Microsoft.KeyVault/deletedVaults/read",
+              "Microsoft.KeyVault/locations/*/read",
+              "Microsoft.KeyVault/vaults/*/read",
+              "Microsoft.KeyVault/operations/read",
+              // Firewallの設定に必要
+              "Microsoft.KeyVault/vaults/write"
+            ],
+            "notActions": [],
+            "dataActions": [
+              "Microsoft.KeyVault/vaults/secrets/*"
+            ],
+            "notDataActions": []
+          }
+        ],
+        "assignableScopes": [
+          "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+        ]
+      }
+    },
+    {
+      "copy": {
+        "name": "secretOfficerRoleAssignmentCopy",
+        "count": "[length(parameters('secretOfficerObjectIds'))]"
+      },
+      "name": "[guid(variables('secretOfficerRoleDefName'), parameters('secretOfficerObjectIds')[copyIndex()])]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "dependsOn": [
+        "[resourceId('Microsoft.Authorization/roleDefinitions', variables('secretOfficerRoleDefName'))]"
+      ],
+      "tags": "[variables('tags')]",
+      "apiVersion": "2018-09-01-preview",
+      "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+      "properties": {
+          "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('secretOfficerRoleDefName'))]",
+          "principalId": "[parameters('secretOfficerObjectIds')[copyIndex()]]",
+          "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "name": "[variables('privateEndpointName')]",
+      "type": "Microsoft.Network/privateEndpoints",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ],
+      "apiVersion": "2020-05-01",
+      "location": "[parameters('regionCode')]",
+      "properties": {
+        "subnet": {
+          "id": "[variables('prepSubnetRef')]"
+        },
+        "PrivateLinkServiceConnections": [
+          {
+            "name": "MyConnection",
+            "properties": {
+              "privateLinkServiceId": "[
+                resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))
+              ]",
+              "groupIds": ["vault"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('privateDnsZoneGroupName')]",
+      "location": "[parameters('regionCode')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateEndpoints', variables('privateEndpointName'))]"
+      ],
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "config1",
+            "properties": {
+              "privateDnsZoneId": "[
+                resourceId(
+                  variables('pdnszResourceGroupName'),
+                  'Microsoft.Network/privateDnsZones',
+                  variables('privateDnsZoneName')
+                )
+              ]"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "keyVaultName": {
+      "type": "string",
+      "value": "[variables('keyVaultName')]"
+    },
+    "keyVaultId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+    }
+  }
+}

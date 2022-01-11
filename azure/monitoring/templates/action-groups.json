@@ -1,0 +1,118 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "actionGroups": {
+      "type": "array",
+      "defaultValue": [
+        {
+          "name": "logSearch2Opsgenie",
+          "useCommonAlertSchema": true
+        },
+        {
+          "name": "metrics2Opsgenie",
+          "useCommonAlertSchema": false
+        },
+        {
+          "name": "resourceHealth2Opsgenie",
+          "useCommonAlertSchema": false
+        }
+      ]
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    }
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "actionGroupCopy",
+        "count": "[length(parameters('actionGroups'))]"
+      },
+      "type": "microsoft.insights/actionGroups",
+      "apiVersion": "2019-03-01",
+      "name": "[
+        concat(
+          'ag-',
+          parameters('subscriptionCode'),
+          '-',
+          parameters('env'),
+          '-',
+          parameters('actionGroups')[copyIndex()].name
+        )
+      ]",
+      "location": "Global",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "groupShortName": "[substring(parameters('actionGroups')[copyIndex()].name, 0, 12)]",
+        "enabled": true,
+        "logicAppReceivers": [
+          {
+            // e.g. "la-gcspre-dev-activityLog2Opsgenie"
+            "name": "[
+              concat(
+                'la-',
+                parameters('subscriptionCode'),
+                '-',
+                parameters('env'),
+                '-',
+                parameters('actionGroups')[copyIndex()].name
+              )
+            ]",
+            // Corresponding LogicApp resource ID
+            "resourceId": "[
+              resourceId(
+                'Microsoft.Logic/workflows',
+                concat(
+                  'la-',
+                  parameters('subscriptionCode'),
+                  '-',
+                  parameters('env'),
+                  '-',
+                  parameters('actionGroups')[copyIndex()].name
+                )
+              )
+            ]",
+            // URL to invoke LogicApp
+            // The listCallbackUrl function can only be used inside a resource (cannot be defined in variables)
+            "callbackUrl": "[
+              listCallbackUrl(
+                concat(
+                  resourceId(
+                    'Microsoft.Logic/workflows',
+                    concat(
+                      'la-',
+                      parameters('subscriptionCode'),
+                      '-',
+                      parameters('env'),
+                      '-',
+                      parameters('actionGroups')[copyIndex()].name
+                    )
+                  ),
+                  '/triggers/manual'
+                ),
+                '2016-10-01'
+              ).value
+            ]",
+            "useCommonAlertSchema": "[
+              parameters('actionGroups')[copyIndex()].useCommonAlertSchema
+            ]"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "agwTlsCertificate": {
+      "reference": {
+        "keyVault": {
+          "id": "__TO_BE_RAPLACED_KEY_VAULT_ID__"
+        },
+        "secretName": "agwTlsCertificate"
+      }
+    },
+    "agwTlsPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "__TO_BE_RAPLACED_KEY_VAULT_ID__"
+        },
+        "secretName": "agwTlsPassword"
+      }
+    },
+    "aitriosAgwTlsCertificate": {
+      "reference": {
+        "keyVault": {
+          "id": "__TO_BE_RAPLACED_KEY_VAULT_ID__"
+        },
+        "secretName": "agwTlsCertificate-aitrios-sony-semicon-co-jp"
+      }
+    },
+    "aitriosAgwTlsPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "__TO_BE_RAPLACED_KEY_VAULT_ID__"
+        },
+        "secretName": "agwTlsPassword-aitrios-sony-semicon-co-jp"
+      }
+    }
+  }
+}

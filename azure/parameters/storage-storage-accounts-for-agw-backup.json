@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountType": {
+      "value": {
+        "prd": "Standard_LRS",
+        "qas": "Standard_LRS",
+        "sdv": "Standard_LRS",
+        "dev": "Standard_LRS",
+        "fdv": "Standard_LRS",
+        "default":"Standard_LRS"
+      }
+    },
+    "blobDeleteRetentionDays": {
+      "value": {
+        "prd": 90,
+        "qas": 90,
+        "sdv": 90,
+        "dev": 2,
+        "fdv": 2,
+        "default": 2
+      }
+    }
+  }
+}

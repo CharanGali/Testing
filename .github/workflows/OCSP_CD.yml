@@ -1,0 +1,143 @@
+name: NonProd Continuous Deployment OCSP
+on:
+  workflow_dispatch:
+    inputs:
+      specifyEnv:
+        description: 'Specify the Env. for which OCSP code needs to be deployed ? (Eg: sarddev/dev/qas):'
+        required: true
+        default: 'sarddev'
+      
+    
+jobs:
+  docker:
+    name: Continuous Deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: sarddev
+    steps: 
+      - name: Azure Login
+        uses: Azure/login@v1.1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: false
+      
+      - name: Set Environment Variables
+        run: |
+          # Set Resource Group Name
+          ResourceGroup_Name=rg-laas-aksagw-${{ github.event.inputs.specifyEnv }}
+          echo "ResourceGroup_Name=${ResourceGroup_Name}" >> $GITHUB_ENV
+          
+          # Checking the existance of Resource group
+          echo "Tested Resource Group: ${ResourceGroup_Name}"
+          rgExists=$(az group exists -n ${ResourceGroup_Name})
+          if [ $rgExists != true ]; then
+            echo "No resource group found - ${ResourceGroup_Name}."
+            exit 1
+          fi
+
+          # Set Application Gateway Name
+          ApplicationGateway_Name=agw-la-${{ github.event.inputs.specifyEnv }}-japaneast
+          echo "ApplicationGateway_Name=${ApplicationGateway_Name}" >> $GITHUB_ENV
+          
+          # Set AKS Cluster Name
+          AKS_Name=aks-la-${{ github.event.inputs.specifyEnv }}-japaneast
+          echo "AKS_Name=${AKS_Name}" >> $GITHUB_ENV
+          
+          # Set Key Vault and SQL Name
+          KV_Name=kv-gcs-${{ github.event.inputs.specifyEnv }}
+          echo "KV_Name=${KV_Name}" >> $GITHUB_ENV
+          SQL_Name=mysql-gcs-deviceaccessinfo-${{ github.event.inputs.specifyEnv }}-japaneast
+          echo "SQL_Name=${SQL_Name}" >> $GITHUB_ENV          
+
+          # Set Repo Name
+          Repo_Name=ss-base-ocsp:${{ github.event.inputs.specifyEnv }}
+          echo "Repo_Name=${Repo_Name}" >> $GITHUB_ENV
+
+
+      - uses: actions/checkout@v1
+
+      # Set access to key vault
+      - name: Set Access to Key Vault
+        run: |
+          spn_objectId="5b1f2c4e-9a18-41fa-ab41-bf5a880661c1"
+          az keyvault set-policy --name ${{ env.KV_Name}} --key-permissions get list --secret-permissions get list set --object-id $spn_objectId
+
+          IPAddr=$(curl -s https://checkip.amazonaws.com)
+          echo "IPAddr=${IPAddr}" >> $GITHUB_ENV
+          az keyvault network-rule add --resource-group ${{ env.ResourceGroup_Name }} --name ${{ env.KV_Name }} --ip-address $IPAddr
+
+      # Get Secrets from Key Vault
+      - name: Fetch secrets from KeyVault
+        uses: Azure/get-keyvault-secrets@v1
+        with:
+          keyvault: ${{ env.KV_Name }}
+          secrets: 'acrLoginServer, acrUsername, acrPassword, AWS-SECRET-ACCESS-KEY, AWS-ACCESS-KEY-ID'
+        id: fetchFromKeyVault
+
+      - name: Login to Docker Hub
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ steps.fetchFromKeyVault.outputs.acrLoginServer }}
+          username: ${{ steps.fetchFromKeyVault.outputs.acrUsername }}
+          password: ${{ steps.fetchFromKeyVault.outputs.acrPassword }}
+
+      - name: Build and Push Docker image
+        run: |
+          # Write the content to Docker Compose file 
+          sed -i -e "s/\${GITHUBACTION_KVNAME}/${{ env.KV_Name }}/" docker-compose.yml
+          docker build . -t ${{ steps.fetchFromKeyVault.outputs.acrLoginServer }}/${{ env.Repo_Name }}
+          docker push ${{ steps.fetchFromKeyVault.outputs.acrLoginServer }}/${{ env.Repo_Name }}
+      
+      - name: OCSP Deployment in AKS Cluster
+        run: |
+          az aks get-credentials --resource-group ${{ env.ResourceGroup_Name }} --name ${{ env.AKS_Name }}
+          kubectl rollout restart deployment depl-ocsp-${{ github.event.inputs.specifyEnv }}
+
+      # Construct Failure message
+      - if: failure()
+        name: create failure message
+        run: |
+          # Remove Access to Key Vault from GitHub Workflow run
+          az keyvault network-rule remove --resource-group ${{ env.ResourceGroup_Name }} --name ${{ env.KV_Name }} --ip-address $IPAddr/32
+          MESSAGE="Continuous Deployment of OCSP Code to ${{ env.ResourceGroup_Name }} workflow execution Failed :red_circle: "
+          echo "RESULT_MESSAGE=${MESSAGE}" >> $GITHUB_ENV
+
+      # Construct Success message
+      - if: success()
+        name: create success message
+        run: |
+          # Remove Access to Key Vault from GitHub Workflow run
+          az keyvault network-rule remove --resource-group ${{ env.ResourceGroup_Name }} --name ${{ env.KV_Name }} --ip-address $IPAddr/32
+          MESSAGE="Continuous Deployment of OCSP Code to ${{ env.ResourceGroup_Name }} workflow executed Successfully :white_check_mark: "
+          echo "RESULT_MESSAGE=${MESSAGE}" >> $GITHUB_ENV
+      
+      # Notification Push to Slack
+      - name: Post to slack
+        if: always()
+        uses: tokorom/action-slack-incoming-webhook@master
+        env:
+          INCOMING_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+            text: "*${{ env.RESULT_MESSAGE }}* [${{ github.repository }}] @ ${{ github.event_name }}"
+            attachments: |
+              [
+                {
+                  "author_name": "${{ github.actor }}",
+                  "author_icon": "${{ github.event.sender.avatar_url }}",
+                  "fields": [
+                    {
+                      "title": "Commit Message",
+                      "value": "${{ github.event.head_commit.message }}"
+                    },
+                    {
+                      "title": "GitHub Actions URL",
+                      "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                    },
+                    {
+                      "title": "Compare URL",
+                      "value": "${{ github.event.compare }}"
+                    }
+                  ]
+                }
+              ]
+

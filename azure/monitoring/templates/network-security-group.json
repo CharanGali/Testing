@@ -1,0 +1,68 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "String"
+    },
+    "location": {
+      "type": "String"
+    },
+    "networkSecurityGroupName":{
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "monitorRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "tags": {
+      "app": "parameters('appCode')",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "settingName": "[
+      concat('diagnostic-setting-', parameters('networkSecurityGroupName'))
+    ]",
+    "workspaceId": "[
+      resourceId(
+        variables('monitorRgName'),
+        'microsoft.operationalinsights/workspaces',
+        concat('log-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups/providers/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "name": "[
+        concat(
+          parameters('networkSecurityGroupName'),
+          '/Microsoft.Insights/',
+          variables('settingName')
+        )
+      ]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "workspaceId": "[variables('workspaceId')]",
+        "logs": [
+          {
+            "category": "NetworkSecurityGroupEvent",
+            "enabled": true
+          },
+          {
+            "category": "NetworkSecurityGroupRuleCounter",
+            "enabled": true
+          }
+        ],
+        "metrics": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      // global params
+      "env": {
+        "type": "string"
+      },
+      "regionCode": {
+        "type": "string"
+      },
+      "subscriptionCode": {
+        "type": "string"
+      },
+      "appCode": {
+        "type": "string"
+      },
+      "usage": {
+        "type": "string"
+      },
+      "deploymentVersion": {
+        "type": "string"
+      },
+      // aci params
+      "cpuCores": {
+        "type": "string",
+        "metadata": {
+          "description": "The number of CPU cores to allocate to the container. Must be an integer."
+        }
+      },
+      "memoryInGb": {
+        "type": "string",
+        "metadata": {
+          "description": "The amount of memory to allocate to the container in gigabytes."
+        }
+      },
+      // mysql container params
+      "containerName": {
+        "type": "string",
+        "metadata": {
+          "description": "Container name (for mysql operation)"
+        }
+      },
+      "image": {
+        "type": "string",
+        "metadata": {
+          "description": "Container image to deploy. Should be of the form accountName/imagename:tag for images stored in Docker Hub or a fully qualified URI for a private registry like the Azure Container Registry."
+        }
+      },
+      "command": {
+        "type": "array",
+        "metadata": {
+          "description": "Command to be launched on image deployment."
+        }
+      },
+      "imageRegistryLoginServer": {
+        "type": "string",
+        "metadata": {
+          "description": "Image Registry Login Server name"
+        }
+      },
+      "imageUsername": {
+        "type": "string",
+        "metadata": {
+          "description": "Image Registry User name"
+        }
+      },
+      "imagePassword": {
+        "type": "string",
+        "metadata": {
+          "description": "Image Registry Password"
+        }
+      }
+    },
+    "variables": {
+      "tags": {
+        "app": "[parameters('appCode')]",
+        "env": "[parameters('env')]",
+        "deploymentVersion": "[parameters('deploymentVersion')]"
+      },
+      // naming rule: cg-{Subscription}-{Environment}-{Usage}-{Region}
+      "containerGroupName": "[
+        concat(
+          'cg-',
+          parameters('subscriptionCode'),
+          '-',
+          parameters('env'),
+          '-',
+          parameters('usage'),
+          '-',
+          parameters('regionCode')
+        )
+      ]",
+      // naming rule: rg-{Subscription}-{Environment}-{Application}-vnet
+      "mngVnetResourceGroupName": "[concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-vnet'
+      )]",
+      // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}-prof
+      "mngVnetNetworkProfileName": "[concat(
+        'vnet-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-vnet-',
+        parameters('regionCode'),
+        '-prof'
+      )]",
+      "mngVnetProfileNameResourceId": "[resourceId(variables('mngVnetResourceGroupName'), 'Microsoft.Network/networkProfiles', variables('mngVnetNetworkProfileName'))]"
+    },
+    "resources": [
+      {
+        "name": "[variables('containerGroupName')]",
+        "tags": "[variables('tags')]",
+        "type": "Microsoft.ContainerInstance/containerGroups",
+        "apiVersion": "2019-12-01",
+        "location": "[parameters('regionCode')]",
+        "properties": {
+          "containers": [
+            {
+              "name": "[parameters('containerName')]",
+              "properties": {
+                "command":"[parameters('command')]",
+                "image": "[parameters('image')]",
+                "resources": {
+                  "requests": {
+                    "cpu": "[parameters('cpuCores')]",
+                    "memoryInGB": "[parameters('memoryInGb')]"
+                  }
+                }
+              }
+            }
+          ],
+          "imageRegistryCredentials": [
+                    {
+                        "server": "[parameters('imageRegistryLoginServer')]",
+                        "username": "[parameters('imageUsername')]",
+                        "password": "[parameters('imagePassword')]"
+                    }
+        	],
+          "osType": "Linux",
+          "networkProfile": {
+            "id": "[variables('mngVnetProfileNameResourceId')]"
+          },
+          "restartPolicy": "Never"
+        }
+      }
+    ],
+    "outputs": {
+    }
+  }

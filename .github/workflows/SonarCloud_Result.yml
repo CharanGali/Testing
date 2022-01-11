@@ -1,0 +1,39 @@
+name: SonarCloud Scan
+on: [pull_request]
+
+jobs:
+  SonarCloud_Result_Notification:
+    name: SonarCloud_Result_Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to slack(SonarScan Result)
+        uses: tokorom/action-slack-incoming-webhook@master
+        env:
+          INCOMING_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          text: "*Pull Request*"
+          attachments: |
+            [
+              {
+                "color": "#E1E4E8",
+                "author_name": "${{ github.actor }}",
+                "author_icon": "${{ github.event.sender.avatar_url }}",
+                "fields": [
+                  {
+                    "title": "Pull Request URL",
+                    "value": "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
+                  }
+                ]
+              },
+              {
+                "color": "#E1E4E8",
+                "author_name": "sonarcloud",
+                "author_icon": "https://avatars3.githubusercontent.com/in/12526",
+                "fields": [
+                  {
+                    "title": "Pull Request ScanResult URL",
+                    "value": "https://sonarcloud.io/dashboard?id=SonySemiconductorSolutions_ss-base-ocsp&pullRequest=${{ github.event.pull_request.number }}"
+                  }
+                ]
+              }
+            ]

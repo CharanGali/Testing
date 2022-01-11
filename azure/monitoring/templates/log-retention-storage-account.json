@@ -1,0 +1,127 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "env": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "usage": {
+      "type": "string",
+      "defaultValue":"common"
+    },
+    "ipRules": {
+      "type": "array"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    "storageAccountType": "Standard_LRS",
+    // naming rule: st-blob-{Subscription}-{Environment}-{Usage}-{Region}
+    "tmpStorageAccountName1": "[
+      concat(
+        'st-blob-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-',
+        parameters('usage'),
+        '-',
+        parameters('regionCode')
+      )
+    ]",
+    "tmpStorageAccountName2": "[
+      replace(
+        variables('tmpStorageAccountName1'),
+        '-',
+        ''
+      )
+    ]",
+    "storageAccountName": "[
+      toLower(
+        if(
+          greater(
+            length(variables('tmpStorageAccountName2')),
+            24
+          ),
+          substring(variables('tmpStorageAccountName2'), 0, 24),
+          variables('tmpStorageAccountName2')
+        )
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-04-01",
+      "location": "[parameters('regionCode')]",
+      "name": "[variables('storageAccountName')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "[variables('storageAccountType')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot",
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": true,
+        "minimumTlsVersion": "TLS1_2",
+        "networkAcls": {
+          "resourceAccessRules": [],
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [],
+          "ipRules": "[parameters('ipRules')]",
+          "defaultAction": "Deny"
+        },
+        "supportsHttpsTrafficOnly": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2021-04-01",
+      "name": "[concat(variables('storageAccountName'), '/default')]",
+      "tags": "[variables('tags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        // コンテナのsoft deleteの設定
+        "containerDeleteRetentionPolicy": {
+          "enabled": true,
+          "days": 30 // soft deleteされたcontainerの保持期限（1 - 365 で設定）
+        },
+        "cors": {
+          "corsRules": []
+        },
+        // soft deleteの設定
+        "deleteRetentionPolicy": {
+            "enabled": true,
+            "days": 30 // soft deleteされたblobの保持期限（1 - 365 で設定）
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "storageAccountResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+    }
+  }
+}

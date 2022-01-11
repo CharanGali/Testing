@@ -1,0 +1,294 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "ddosProtectionPlanId": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    "subsEnvApp": "[
+      concat(
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode')
+      )
+    ]",
+    // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "vnetName": "[
+      concat(
+        'vnet-',
+        variables('subsEnvApp'),
+        '-vnet-',
+        parameters('regionCode')
+      )
+    ]",
+    // naming rule: snet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "subnetNamePrep": "[
+      concat(
+        'snet-',
+        variables('subsEnvApp'),
+        '-prep-',
+        parameters('regionCode')
+      )
+    ]",
+    // naming rule: snet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "subnetNameAks": "[
+      concat(
+        'snet-',
+        variables('subsEnvApp'),
+        '-aks-',
+        parameters('regionCode')
+      )
+    ]",
+    "subnetNameAgw": "[
+      concat(
+        'snet-',
+        variables('subsEnvApp'),
+        '-agw-',
+        parameters('regionCode')
+      )
+    ]",
+    "subnetNameMng": "[
+      concat(
+        'snet-',
+        variables('subsEnvApp'),
+        '-ci-',
+        parameters('regionCode')
+      )
+    ]",
+    "subnetNameMysql": "[
+      concat(
+        'snet-',
+        variables('subsEnvApp'),
+        '-mysql-',
+        parameters('regionCode')
+      )
+    ]",
+    "subnetNameFunc": "[
+      concat(
+        'snet-',
+        variables('subsEnvApp'),
+        '-func-',
+        parameters('regionCode')
+      )
+    ]",
+    "subnetNameBatch": "[
+      concat(
+        'snet-',
+        variables('subsEnvApp'),
+        '-batch-',
+        parameters('regionCode')
+      )
+    ]",
+    "subnetNameBastion": "AzureBastionSubnet",
+    "vnetAddressPrefix": "10.0.0.0/8",
+    "subnetAddressPrefixPrep": "10.0.0.0/16",
+    "subnetAddressPrefixAks": "10.1.0.0/16",
+    "subnetAddressPrefixAgw": "10.2.0.0/16",
+    "subnetAddressPrefixMng": "10.3.0.0/16",
+    "subnetAddressPrefixMysql": "10.4.0.0/16",
+    "subnetAddressPrefixFunc": "10.5.0.0/16",
+    "subnetAddressPrefixBatch": "10.6.0.0/16",
+    "subnetAddressPrefixBastion": "10.7.0.0/16",
+    "serviceEndpoints": [
+      {
+        "service": "Microsoft.Sql"
+      },
+      {
+        "service": "Microsoft.KeyVault"
+      },
+      {
+        "service": "Microsoft.Storage"
+      }
+    ],
+    // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}-prof
+    "mngNetworkProfileName": "[concat(variables('vnetName'),'-prof')]",
+    "interfaceConfigName": "eth0",
+    "interfaceIpConfig": "ipconfigprofile1"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2019-11-01",
+      "location": "[parameters('regionCode')]",
+      "name": "[variables('vnetName')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "enableDdosProtection": true,
+        "ddosProtectionPlan": {
+            "id": "[parameters('ddosProtectionPlanId')]"
+        },
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetNamePrep')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefixPrep')]",
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Disabled"
+            }
+          },
+          {
+            "name": "[variables('subnetNameAks')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefixAks')]",
+              "serviceEndpoints": "[variables('serviceEndpoints')]"
+            }
+          },
+          {
+            "name": "[variables('subnetNameAgw')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefixAgw')]",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Web"
+                }
+              ],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "[variables('subnetNameMng')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefixMng')]",
+              "serviceEndpoints": "[variables('serviceEndpoints')]",
+              "delegations": [
+                {
+                  "name": "DelegationService",
+                  "properties": {
+                    "serviceName": "Microsoft.ContainerInstance/containerGroups"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "[variables('subnetNameMysql')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefixMysql')]",
+              "delegations": [
+                {
+                  "name": "Microsoft.DBforMySQL.flexibleServers",
+                  "properties": {
+                    "serviceName": "Microsoft.DBforMySQL/flexibleServers"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "[variables('subnetNameFunc')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefixFunc')]",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Web"
+                }
+              ],
+              "delegations": [
+                {
+                  "name": "DelegationService",
+                  "properties": {
+                    "serviceName": "Microsoft.Web/serverFarms"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "[variables('subnetNameBatch')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefixBatch')]",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage",
+                  "locations": [
+                    "japaneast",
+                    "japanwest"
+                  ]
+                }
+              ],
+              "delegations": [
+                {
+                  "name": "Microsoft.Web.serverFarms",
+                  "properties": {
+                    "serviceName": "Microsoft.Web/serverFarms"
+                  }
+                }
+              ],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "[variables('subnetNameBastion')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefixBastion')]",
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[variables('mngNetworkProfileName')]",
+      "type": "Microsoft.Network/networkProfiles",
+      "apiVersion": "2020-05-01",
+      "location": "[parameters('regionCode')]",
+      "tags": "[variables('tags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "containerNetworkInterfaceConfigurations": [
+          {
+            "name": "[variables('interfaceConfigName')]",
+            "properties": {
+              "ipConfigurations": [
+                {
+                  "name": "[variables('interfaceIpConfig')]",
+                  "properties": {
+                    "subnet": {
+                      "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetNameMng'))]"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

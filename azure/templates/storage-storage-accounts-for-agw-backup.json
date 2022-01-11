@@ -1,0 +1,181 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "env": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "storageAccountType": {
+      "type": "object"
+    },
+    "usage": {
+      "type": "string",
+      "defaultValue":"common"
+    },
+    "blobDeleteRetentionDays": {
+      "type": "object"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    // envType: fdv-xxxx の形式だと"fdv", それ以外はenvと同じ値
+    "envType": "[
+      if (
+        startsWith('fdv-', parameters('env')),
+        'fdv',
+        parameters('env')
+      )
+    ]",
+    // naming rule: st-blob-{Subscription}-{Environment}-{Usage}-{Region}
+    "tmpStorageAccountName1": "[
+      concat(
+        'st-blob-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-',
+        parameters('usage'),
+        '-',
+        parameters('regionCode')
+      )
+    ]",
+    "tmpStorageAccountName2": "[
+      replace(
+        variables('tmpStorageAccountName1'),
+        '-',
+        ''
+      )
+    ]",
+    "storageAccountName": "[
+      if(
+        greater(
+          length(variables('tmpStorageAccountName2')),
+          24
+        ),
+        substring(variables('tmpStorageAccountName2'), 0, 24),
+        variables('tmpStorageAccountName2')
+      )
+    ]",
+    "deleteRetentionPolicy": {
+      "enabled": true,
+      "days": "[
+        if (
+          contains(parameters('blobDeleteRetentionDays'), variables('envType')),
+          parameters('blobDeleteRetentionDays')[variables('envType')],
+          parameters('blobDeleteRetentionDays')['default']
+        )
+      ]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-06-01",
+      "location": "[parameters('regionCode')]",
+      "name": "[variables('storageAccountName')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "[
+          if (
+            contains(parameters('storageAccountType'), variables('envType')),
+            parameters('storageAccountType')[variables('envType')],
+            parameters('storageAccountType')['default']
+          )
+        ]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "supportsHttpsTrafficOnly": true,
+        "allowBlobPublicAccess": false,
+        "minimumTlsVersion": "TLS1_2",
+        "allowSharedKeyAccess": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2020-08-01-preview",
+      "name": "[concat(variables('storageAccountName'), '/default')]",
+      "tags": "[variables('tags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "sku": {
+        "name": "[
+          if (
+            contains(parameters('storageAccountType'), variables('envType')),
+            parameters('storageAccountType')[variables('envType')],
+            parameters('storageAccountType')['default']
+          )
+        ]",
+        "tier": "Standard"
+      },
+      "properties": {
+        "cors": {
+          "corsRules": []
+        },
+        "containerDeleteRetentionPolicy": "[variables('deleteRetentionPolicy')]",
+        "deleteRetentionPolicy": "[variables('deleteRetentionPolicy')]"
+      }
+    },
+    {
+      "name": "[concat(variables('storageAccountName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "type": "Microsoft.Storage/storageAccounts/managementPolicies",
+      "apiVersion": "2019-04-01",
+      "properties": {
+        "policy": {
+          "rules": [
+            {
+              "enabled": true,
+              "name": "deleteAgwBackupContainerBlobsInThirtyDay",
+              "type": "Lifecycle",
+              "definition": {
+                "actions": {
+                  "baseBlob": {
+                    "delete": {
+                      "daysAfterModificationGreaterThan": 30
+                    }
+                  }
+                },
+                "filters": {
+                  "prefixMatch":[
+                    "agw-backup"
+                  ],
+                  "blobTypes": [
+                    "blockBlob"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+"outputs": {
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageAccountName')]"
+    }
+  }
+}

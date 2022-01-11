@@ -1,0 +1,203 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "resourceHealthOpsgenieEndpoint": {
+      "type": "securestring"
+    }
+  },
+  "variables": {
+    "workspaceId": "[resourceId('microsoft.operationalinsights/workspaces', concat('log-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor'))]",
+    "workflowsName": "[concat('la-', parameters('subscriptionCode'), '-', parameters('env'), '-resourceHealth2Opsgenie')]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "triggerResourceId": "[resourceId('Microsoft.Logic/workflows/triggers', variables('workflowsName'), 'manual')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2017-07-01",
+      "name": "[variables('workflowsName')]",
+      "tags": "[variables('tags')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "opsgenieEndpoint": {
+              "type": "SecureString"
+            }
+          },
+          "triggers": {
+            "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "properties": {
+                        "context": {
+                          "properties": {
+                            "activityLog": {
+                              "properties": {
+                                "channels": {
+                                  "type": "string"
+                                },
+                                "correlationId": {
+                                  "type": "string"
+                                },
+                                "eventDataId": {
+                                  "type": "string"
+                                },
+                                "eventSource": {
+                                  "type": "string"
+                                },
+                                "eventTimestamp": {
+                                  "type": "string"
+                                },
+                                "level": {
+                                  "type": "string"
+                                },
+                                "operationId": {
+                                  "type": "string"
+                                },
+                                "operationName": {
+                                  "type": "string"
+                                },
+                                "properties": {
+                                  "properties": {
+                                    "cause": {
+                                      "type": "string"
+                                    },
+                                    "currentHealthStatus": {
+                                      "type": "string"
+                                    },
+                                    "details": {
+                                      "type": "string"
+                                    },
+                                    "previousHealthStatus": {
+                                      "type": "string"
+                                    },
+                                    "title": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "resourceGroupName": {
+                                  "type": "string"
+                                },
+                                "resourceId": {
+                                  "type": "string"
+                                },
+                                "resourceProviderName": {
+                                  "type": "string"
+                                },
+                                "resourceType": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "submissionTimestamp": {
+                                  "type": "string"
+                                },
+                                "subscriptionId": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "schemaId": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "actions": {
+            "HTTP": {
+              "runAfter": {},
+              "type": "Http",
+              "inputs": {
+                "body": "@triggerBody()",
+                "method": "POST",
+                "uri": "@parameters('opsgenieEndpoint')"
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {
+          "opsgenieEndpoint": {
+            "value": "[parameters('resourceHealthOpsgenieEndpoint')]"
+          }
+        }
+      },
+      "resources": [
+        {
+          "type": "providers/diagnosticSettings",
+          "name": "[concat('Microsoft.Insights/', variables('workflowsName'))]",
+          "location": "[parameters('location')]",
+          "apiVersion": "2017-05-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Logic/workflows', variables('workflowsName'))]"
+          ],
+          "properties": {
+            "workspaceId": "[variables('workspaceId')]",
+            "logs": [
+              {
+                "category": "WorkflowRuntime",
+                "enabled": true
+              }
+            ],
+            "metrics": [
+              {
+                "category": "AllMetrics",
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "logicAppTriggerUrl": {
+      "type": "string",
+      "value": "[listCallbackUrl(variables('triggerResourceId'), '2016-10-01').value]"
+    }
+  }
+}

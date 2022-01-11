@@ -1,0 +1,74 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "wafMode": {
+      "type": "string"
+    },
+    "managedRuleSets": {
+      "type": "array"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    // naming rule: wgf{Subscription}{Environment}{Application}{Usage}{Region}
+    "webApplicationFirewallName": "[
+      replace(
+        concat(
+          'wgf',
+          parameters('subscriptionCode'),
+          parameters('env'),
+          parameters('appCode'),
+          'waf',
+          parameters('regionCode')
+        ),
+        '-',
+        ''
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('webApplicationFirewallName')]",
+      "location": "[parameters('regionCode')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "customRules": [],
+        "policySettings": {
+          "requestBodyCheck": false,
+          "maxRequestBodySizeInKb": 128,
+          "fileUploadLimitInMb": 100,
+          "state": "Enabled",
+          "mode": "[parameters('wafMode')]"
+        },
+        "managedRules": {
+          "managedRuleSets": "[parameters('managedRuleSets')]",
+          "exclusions": []
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

@@ -1,0 +1,307 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "opsgenieEndpoint": {
+      "type": "string",
+      "defaultValue": "https://api.opsgenie.com/v2/alerts"
+    },
+    "postAlertOpsgenieApiKey": {
+      "type": "securestring"
+    }
+  },
+  "variables": {
+    "workspaceId": "[resourceId('microsoft.operationalinsights/workspaces', concat('log-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor'))]",
+    "workflowsName": "[concat('la-', parameters('subscriptionCode'), '-', parameters('env'), '-logSearch2Opsgenie')]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "triggerResourceId": "[resourceId('Microsoft.Logic/workflows/triggers', variables('workflowsName'), 'manual')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2017-07-01",
+      "name": "[variables('workflowsName')]",
+      "tags": "[variables('tags')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "opsgenieApiKey": {
+              "type": "SecureString"
+            }
+          },
+          "triggers": {
+            "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "schema": {
+                  "properties": {
+                    "properties": {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "properties": {
+                              "properties": {
+                                "alertContext": {
+                                  "properties": {
+                                    "properties": {
+                                      "properties": {},
+                                      "type": "object"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "essentials": {
+                                  "properties": {
+                                    "properties": {
+                                      "properties": {
+                                        "alertContextVersion": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "alertId": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "alertRule": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "alertTargetIDs": {
+                                          "properties": {
+                                            "items": {
+                                              "properties": {
+                                                "type": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "type": "object"
+                                            },
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "description": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "essentialsVersion": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "firedDateTime": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "monitorCondition": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "monitoringService": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "originAlertId": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "resolvedDateTime": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "severity": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        },
+                                        "signalType": {
+                                          "properties": {
+                                            "type": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "type": "object"
+                                        }
+                                      },
+                                      "type": "object"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "type": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "schemaId": {
+                          "properties": {
+                            "type": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "actions": {
+            "HTTP": {
+              "runAfter": {},
+              "type": "Http",
+              "inputs": {
+                "body": {
+                  "description": "@{concat('Link to Log Analytics: ', triggerBody()?['data']?['alertContext']?['LinkToSearchResults'])}",
+                  "details": {
+                    "Alert Rule": "@{triggerBody()?['data']?['essentials']?['alertRule']}",
+                    "End time": "@{triggerBody()?['data']?['alertContext']?['SearchIntervalEndtimeUtc']}",
+                    "Log Search Query": "@{triggerBody()?['data']?['alertContext']?['SearchQuery']}",
+                    "Loglevel": "@{if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev1'), 'ERROR', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev2'), 'WARN', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev3'), 'INFO', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev4'), 'DEBUG', 'CRITICAL'))))}",
+                    "Severity": "@{coalesce(triggerBody()?['data']?['essentials']?['severity'], 'SevN')}",
+                    "Start time": "@{triggerBody()?['data']?['alertContext']?['SearchIntervalStartTimeUtc']}",
+                    "Took": "@{concat(mul(60, int(coalesce(triggerBody()?['data']?['alertContext']?['SearchIntervalInMinutes'], 0))), ' secs.')}",
+                    "Workspace ID": "@{triggerBody()?['data']?['alertContext']?['WorkspaceId']}"
+                  },
+                  "message": "@{concat('[Azure LogAnalytics Query] Alert fired with ', triggerBody()?['data']?['alertContext']?['ResultCount'], ' records - Threshold ', triggerBody()?['data']?['alertContext']?['Operator'], ' ', triggerBody()?['data']?['alertContext']?['Threshold'])}",
+                  "note": "@{triggerBody()?['data']?['alertContext']?['SearchResults']?['tables']?[0]?['rows']?[0]}",
+                  "priority": "@{if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev1'), 'P2', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev2'), 'P3', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev3'), 'P4', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev4'), 'P5', 'P1'))))}",
+                  "source": "@{triggerBody()?['data']?['essentials']?['alertId']}",
+                  "tags": [
+                    "@{if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev1'), 'ERROR', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev2'), 'WARN', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev3'), 'INFO', if(equals(triggerBody()?['data']?['essentials']?['severity'],'Sev4'), 'DEBUG', 'CRITICAL'))))}",
+                    "@{coalesce(triggerBody()?['data']?['essentials']?['severity'], 'SevN')}"
+                  ]
+                },
+                "headers": {
+                  "Authorization": "@{concat('GenieKey ', parameters('opsgenieApiKey'))}"
+                },
+                "method": "POST",
+                "uri": "[parameters('opsgenieEndpoint')]"
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {
+          "opsgenieApiKey": {
+            "value": "[parameters('postAlertOpsgenieApiKey')]"
+          }
+        }
+      },
+      "resources": [
+        {
+          "type": "providers/diagnosticSettings",
+          "name": "[concat('Microsoft.Insights/', variables('workflowsName'))]",
+          "location": "[parameters('location')]",
+          "apiVersion": "2017-05-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Logic/workflows', variables('workflowsName'))]"
+          ],
+          "properties": {
+            "workspaceId": "[variables('workspaceId')]",
+            "logs": [
+              {
+                "category": "WorkflowRuntime",
+                "enabled": true
+              }
+            ],
+            "metrics": [
+              {
+                "category": "AllMetrics",
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "logicAppTriggerUrl": {
+      "type": "string",
+      "value": "[listCallbackUrl(variables('triggerResourceId'), '2016-10-01').value]"
+    }
+  }
+}

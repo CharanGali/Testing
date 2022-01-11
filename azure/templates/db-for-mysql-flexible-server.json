@@ -1,0 +1,164 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "mysqlUsername": {
+      "type": "securestring"
+    },
+    "mysqlPassword": {
+      "type": "securestring"
+    },
+    "backupRetentionDays": {
+      "type": "object"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    "subsEnvApp": "[
+      concat(
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode')
+      )
+    ]",
+    "vnetResourceGroupName": "[
+      concat(
+        'rg-',
+        variables('subsEnvApp'),
+        '-vnet'
+      )
+    ]",
+    // envType: fdv-xxxx の形式だと"fdv", それ以外はenvと同じ値
+    "envType": "[
+      if (
+        startsWith('fdv-', parameters('env')),
+        'fdv',
+        parameters('env')
+      )
+    ]",
+    // naming rule: mysql-{Subscription}-{Environment}-{Usage}-{Region}
+    "mysqlServerName": "[
+      concat(
+        'mysql-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-flexible-',
+        parameters('regionCode')
+      )
+    ]",
+    // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "vnetName": "[
+      concat(
+        'vnet-',
+        variables('subsEnvApp'),
+        '-vnet-',
+        parameters('regionCode')
+      )
+    ]",
+    // naming rule: snet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "subnetNameMysql": "[
+      concat(
+        'snet-',
+        variables('subsEnvApp'),
+        '-mysql-',
+        parameters('regionCode')
+      )
+    ]",
+    "vnetId": "[
+      resourceId(
+        variables('vnetResourceGroupName'),
+        'Microsoft.Network/virtualNetworks',
+        variables('vnetName')
+      )
+    ]",
+    "subnetRef": "[
+      concat(
+        variables('vnetId'),
+        '/subnets/',
+        variables('subnetNameMysql')
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DBforMySQL/flexibleServers",
+      "sku": {
+        "name": "Standard_D2ds_v4",
+        "tier": "GeneralPurpose"
+      },
+      "kind": "",
+      "name": "[variables('mysqlServerName')]",
+      "apiVersion": "2020-07-01-privatepreview",
+      "location": "Japan East",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "version": "8.0.21",
+        "administratorLogin": "[parameters('mysqlUsername')]",
+        "administratorLoginPassword": "[parameters('mysqlPassword')]",
+        "publicNetworkAccess": "Disabled",
+        "delegatedSubnetArguments": {
+          "subnetArmResourceId": "[variables('subnetRef')]"
+        },
+        "haEnabled": "Enabled",
+        "availabilityZone": "1",
+        "storageProfile": {
+          "storageMB": 51200,
+          "backupRetentionDays": "[
+            if (
+              contains(parameters('backupRetentionDays'), variables('envType')),
+              parameters('backupRetentionDays')[variables('envType')],
+              parameters('backupRetentionDays')['default']
+            )
+          ]",
+          "geoRedundantBackup": "Disabled",
+          "storageIops": "400"
+        },
+        "dataencryption": {
+          "infrastructureEncryption": "Disabled"
+        }
+      },
+      "resources": [
+        {
+          "type": "configurations",
+          "apiVersion": "2020-07-01-privatepreview",
+          "name": "sql_mode",
+          "dependsOn": [
+            "[resourceId('Microsoft.DBforMySQL/flexibleServers', variables('mysqlServerName'))]"
+          ],
+          "properties": {
+            "value": "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION",
+            "source": "user-override"
+          }
+       }
+     ]
+    }
+  ],
+  "outputs": {
+    "mysqlServerName": {
+      "type": "string",
+      "value": "[variables('mysqlServerName')]"
+    }
+  }
+}

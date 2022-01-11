@@ -1,0 +1,88 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "wafMode": {
+      "value": "Prevention" // "Detection" or "Prevention"
+    },
+    "managedRuleSets": {
+      "value": [
+        {
+          "ruleSetType": "OWASP",
+          "ruleSetVersion": "3.0",
+          "ruleGroupOverrides": [
+            {
+              "ruleGroupName": "REQUEST-913-SCANNER-DETECTION",
+              "rules": [
+                {
+                  "ruleId": "913101",
+                  "state": "Disabled"
+                }
+              ]
+            },
+            {
+              "ruleGroupName": "REQUEST-920-PROTOCOL-ENFORCEMENT",
+              "rules": [
+                {
+                  "ruleId": "920300",
+                  "state": "Disabled"
+                },
+                {
+                  "ruleId": "920350",
+                  "state": "Disabled"
+                }
+              ]
+            },
+            {
+              "ruleGroupName": "REQUEST-931-APPLICATION-ATTACK-RFI",
+              "rules": [
+                {
+                  "ruleId": "931130",
+                  "state": "Disabled"
+                }
+              ]
+            },
+            {
+              "ruleGroupName": "REQUEST-932-APPLICATION-ATTACK-RCE",
+              "rules": [
+                {
+                  "ruleId": "932150",
+                  "state": "Disabled"
+                }
+              ]
+            },
+            {
+              "ruleGroupName": "REQUEST-942-APPLICATION-ATTACK-SQLI",
+              "rules": [
+                {
+                  "ruleId": "942190",
+                  "state": "Disabled"
+                },
+                {
+                  "ruleId": "942370",
+                  "state": "Disabled"
+                },
+                {
+                  "ruleId": "942380",
+                  "state": "Disabled"
+                },
+                {
+                  "ruleId": "942430",
+                  "state": "Disabled"
+                },
+                {
+                  "ruleId": "942440",
+                  "state": "Disabled"
+                },
+                {
+                  "ruleId": "942450",
+                  "state": "Disabled"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

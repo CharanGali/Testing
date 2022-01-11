@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "cpuCores": {
+        "value": "1.0"
+      },
+      "memoryInGb": {
+        "value": "2"
+      },
+      "containerName": {
+        "value": "dbmigrate"
+      },
+      "image": {
+        "value": "${GITHUBACTION_ACRL}/${GITHUBACTION_REPO}"
+      },
+      "command": {
+        "value": ["/bin/bash", "-c", "bash ./Migrate/Migrate.sh yes; sleep 600"]
+      },
+      "imageRegistryLoginServer": {
+        "value": "${GITHUBACTION_ACRL}"
+      },
+      "imageUsername": {
+        "value": "${GITHUBACTION_ACRU}"
+      },
+      "imagePassword": {
+        "value": "${GITHUBACTION_ACRP}"
+      }
+    }
+  }

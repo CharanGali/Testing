@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "String"
+    },
+    "location": {
+      "type": "String"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "monitorRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "nodeAksRgName": "[concat('rg-', parameters('env'), '-', parameters('appCode'), '-node')]",
+    "tags": {
+      "app": "parameters('appCode')",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "workspaceId": "[
+      resourceId(
+        variables('monitorRgName'),
+        'microsoft.operationalinsights/workspaces',
+        concat('log-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')
+      )
+    ]",
+    "kubernetesLoadBalancerName": "kubernetes", // 固定の名前
+    "kubernetesInternalLoadBalancerName": "kubernetes-internal", // 固定の名前
+    "loadBalancerNames": "[createArray(variables('kubernetesLoadBalancerName'), variables('kubernetesInternalLoadBalancerName'))]"
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "loadBalancerNames",
+        "count": "[length(variables('loadBalancerNames'))]"
+      },
+      "type": "Microsoft.Network/loadBalancers/providers/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "name": "[
+        concat(
+          variables('loadBalancerNames')[copyIndex()],
+          '/Microsoft.Insights/diagnostic-setting-',
+          variables('loadBalancerNames')[copyIndex()],
+          '-',
+          variables('nodeAksRgName')
+        )
+      ]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "workspaceId": "[variables('workspaceId')]",
+        "logs": [
+          {
+            "category": "LoadBalancerAlertEvent",
+            "enabled": true
+          },
+          {
+            "category": "LoadBalancerProbeHealthStatus",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      }
+    }
+  ]
+}

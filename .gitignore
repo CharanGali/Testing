@@ -1,0 +1,35 @@
+bin
+obj
+csx
+
+edge
+Publish
+
+*.log
+*.user
+*.suo
+*.cscfg
+*.Cache
+project.lock.json
+
+.vscode
+# Local python packages
+.python_packages/
+
+# Python Environments
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Node Modules
+node_modules/
+
+
+# Build files
+dist/
+
+# unit test coverage
+coverage/

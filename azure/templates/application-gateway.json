@@ -1,0 +1,410 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    },
+    "agwMinCapacity": {
+      "type": "int"
+    },
+    "agwMaxCapacity": {
+      "type": "int"
+    },
+    "agwTlsCertificate": {
+      "type": "securestring"
+    },
+    "agwTlsPassword": {
+      "type": "securestring"
+    },
+    "aitriosAgwTlsCertificate": {
+      "type": "securestring"
+    },
+    "aitriosAgwTlsPassword": {
+      "type": "securestring"
+    },
+    "applicationGatewaySku": {
+      "type": "string"
+    },
+    "wafMode": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    // naming rule: agw-{Subscription}-{Environment}-{Application}-{Region}
+    "applicationGatewayName": "[
+      concat(
+        'agw-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-',
+        parameters('regionCode')
+      )
+    ]",
+    "applicationGatewayId": "[resourceId('Microsoft.Network/applicationGateways', variables('applicationGatewayName'))]",
+    "vnetResourceGroupName": "[
+      concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-cmn-',
+        'main',
+        '-vnet'
+      )
+    ]",
+    // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "vnetName": "[
+      concat(
+        'vnet-',
+        parameters('subscriptionCode'),
+        '-cmn-',
+        'main',
+        '-vnet-',
+        parameters('regionCode')
+      )
+    ]",
+    "subnetNameAgw": "[
+      concat(
+        'snet-',
+        parameters('subscriptionCode'),
+        '-cmn-',
+        'main',
+        '-agw-',
+        parameters('regionCode')
+      )
+    ]",
+    "vnetId": "[
+      resourceId(
+        variables('vnetResourceGroupName'),
+        'Microsoft.Network/virtualNetworks',
+        variables('vnetName')
+      )
+    ]",
+    "applicationGatewaySubnetId": "[
+      concat(
+        variables('vnetId'),
+        '/subnets/',
+        variables('subnetNameAgw')
+      )
+    ]",
+    "pipResourceGroupName": "[
+      concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-pip'
+      )
+    ]",
+    "agwIpName": "[
+      concat(
+        'pip-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-agw-',
+        parameters('regionCode')
+      )
+    ]",
+    "agwIpId": "[
+      resourceId(
+        variables('pipResourceGroupName'),
+        'Microsoft.Network/publicIPAddresses',
+        variables('agwIpName')
+      )
+    ]",
+    "webApplicationFirewallRgName": "[
+      concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-wgf'
+      )
+    ]",
+    "webApplicationFirewallName": "[
+      replace(
+        concat(
+          'wgf',
+          parameters('subscriptionCode'),
+          parameters('env'),
+          parameters('appCode'),
+          'waf',
+          parameters('regionCode')
+        ),
+        '-',
+        ''
+      )
+    ]",
+    "webApplicationFirewallConfiguration": {
+      "enabled": "true",
+      "firewallMode": "[parameters('wafMode')]"
+    },
+    "sslCertificateName": "[
+      concat(
+        parameters('subscriptionCode'),
+        'SslCert'
+      )
+    ]",
+    "aitriosSslCertificateName": "[
+      concat(
+        'cert-',
+        parameters('subscriptionCode'),
+        '-aitrios'
+      )
+    ]",
+    "customProbeName": "[
+      concat(
+        parameters('subscriptionCode'),
+        '-ladps-testprobe'
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('applicationGatewayName')]",
+      "location": "[parameters('regionCode')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "sku": {
+          "name": "WAF_v2",
+          "tier": "WAF_v2"
+        },
+        "autoscaleConfiguration": {
+          "minCapacity": "[parameters('agwMinCapacity')]",
+          "maxCapacity": "[parameters('agwMaxCapacity')]"
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[variables('applicationGatewaySubnetId')]"
+              }
+            }
+          }
+        ],
+        "sslCertificates": [
+          {
+            "name": "[variables('sslCertificateName')]",
+            "properties": {
+              "data": "[parameters('agwTlsCertificate')]",
+              "password": "[parameters('agwTlsPassword')]"
+            }
+          },
+          {
+            "name": "[variables('aitriosSslCertificateName')]",
+            "properties": {
+              "data": "[parameters('aitriosAgwTlsCertificate')]",
+              "password": "[parameters('aitriosAgwTlsPassword')]"
+            }
+          }
+        ],
+        "trustedRootCertificates": [],
+        "trustedClientCertificates": [],
+        "sslProfiles": [],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGatewayFrontendIP",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[variables('agwIpId')]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "httpsPort",
+            "properties": {
+              "Port": 443
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "aks-service",
+            "properties": {
+              "backendAddresses": []
+            }
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "setting",
+            "properties": {
+              "port": 80,
+              "protocol": "Http",
+              "cookieBasedAffinity": "Disabled",
+              "pickHostNameFromBackendAddress": false,
+              "affinityCookieName": "ApplicationGatewayAffinity",
+              "requestTimeout": 30,
+              "probe": {
+                "id": "[concat(variables('applicationGatewayId'), '/probes/aks-service-probe')]"
+              }
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "httpsListener",
+            "properties": {
+              "firewallPolicy": {
+                "id": "[
+                  resourceId(
+                    variables('webApplicationFirewallRgName'),
+                    'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies',
+                    variables('webApplicationFirewallName')
+                  )
+                ]"
+              },
+              "frontendIPConfiguration": {
+                "id": "[concat(variables('applicationGatewayId'), '/frontendIPConfigurations/appGatewayFrontendIP')]"
+              },
+              "frontendPort": {
+                "id": "[concat(variables('applicationGatewayId'), '/frontendPorts/httpsPort')]"
+              },
+              "protocol": "Https",
+              "sslCertificate": {
+                "id": "[concat(variables('applicationGatewayId'), '/sslCertificates/', variables('sslCertificateName'))]"
+              },
+              "hostNames": [],
+              "requireServerNameIndication": false
+            }
+          }
+        ],
+        "urlPathMaps": [
+          {
+            "name": "rule1",
+            "properties": {
+              "defaultBackendAddressPool": {
+                "id": "[concat(variables('applicationGatewayId'), '/backendAddressPools/aks-service')]"
+              },
+              "defaultBackendHttpSettings": {
+                "id": "[concat(variables('applicationGatewayId'), '/backendHttpSettingsCollection/setting')]"
+              },
+              "pathRules": [
+                // 初期構築時にルールが一件は必要なので影響がないルールを設定しておく
+                {
+                  "name": "default-path-rule",
+                  "properties": {
+                    "paths": [
+                      "/roleless/placeholder/for/initial/deployment"
+                    ],
+                    "backendAddressPool": {
+                      "id": "[concat(variables('applicationGatewayId'), '/backendAddressPools/aks-service')]"
+                    },
+                    "backendHttpSettings": {
+                      "id": "[concat(variables('applicationGatewayId'), '/backendHttpSettingsCollection/setting')]"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "name": "rule1",
+            "properties": {
+              "ruleType": "PathBasedRouting",
+              "httpListener": {
+                "id": "[concat(variables('applicationGatewayId'), '/httpListeners/httpsListener')]"
+              },
+              "urlPathMap": {
+                "id": "[concat(variables('applicationGatewayId'), '/urlPathMaps/rule1')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "aks-service-probe",
+            "properties": {
+              "protocol": "Http",
+              "host": "localhost",
+              "port": 80,
+              "path": "/probe",
+              "interval": 30,
+              "timeout": 30,
+              "unhealthyThreshold": 3,
+              "pickHostNameFromBackendHttpSettings": false,
+              "minServers": 0,
+              "match": {
+                "statusCodes": [
+                  "200-499"
+                ]
+              }
+            }
+          },
+          {
+            "name": "[variables('customProbeName')]",
+            "properties": {
+              "protocol": "Http",
+              "host": "localhost",
+              "port": 80,
+              "path": "/",
+              "interval": 30,
+              "timeout": 30,
+              "unhealthyThreshold": 3,
+              "pickHostNameFromBackendHttpSettings": false,
+              "minServers": 0,
+              "match": {
+                "statusCodes": [
+                  "200-499"
+                ]
+              }
+            }
+          }
+        ],
+        "webApplicationFirewallConfiguration": "[
+          if(
+            equals(parameters('applicationGatewaySku'), 'WAF_v2'),
+            variables('webApplicationFirewallConfiguration'),
+            json('null')
+          )
+        ]",
+        "sslPolicy": {
+          "policyType": "Custom",
+          "minProtocolVersion": "TLSv1_2",
+          "cipherSuites": [
+            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

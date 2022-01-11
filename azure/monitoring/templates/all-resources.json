@@ -1,0 +1,96 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "String"
+    },
+    "location": {
+      "type": "String"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "alertRuleName": "[concat('ar-', parameters('subscriptionCode'), '-', parameters('env'), '-resourceHealth2Opsgenie')]",
+    "monitorRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "actionGroupId": "[
+      resourceId(
+        variables('monitorRgName'),
+        'microsoft.insights/actionGroups',
+        concat('ag-sgcs-', parameters('env'), '-resourceHealth2Opsgenie')
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "type": "microsoft.insights/activityLogAlerts",
+      "apiVersion": "2017-04-01",
+      "name": "[variables('alertRuleName')]",
+      "location": "Global",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "scopes": [
+          "[subscription().id]"
+        ],
+        "condition": {
+          "allOf": [
+            {
+              "containsAny": null,
+              "equals": "ResourceHealth",
+              "field": "category",
+              "odata.type": null
+            },
+            {
+              "anyOf": [
+                {
+                  "equals": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-aks')]",
+                  "field": "resourceGroup"
+                },
+                {
+                  "equals": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-kv')]",
+                  "field": "resourceGroup"
+                },
+                {
+                  "equals": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-node')]",
+                  "field": "resourceGroup"
+                },
+                {
+                  "equals": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-pip')]",
+                  "field": "resourceGroup"
+                },
+                {
+                  "equals": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-st-blob')]",
+                  "field": "resourceGroup"
+                },
+                {
+                  "equals": "[variables('monitorRgName')]",
+                  "field": "resourceGroup"
+                }
+              ]
+            }
+          ],
+          "odata.type": null
+        },
+        "actions": {
+          "actionGroups": [
+            {
+              "actionGroupId": "[variables('actionGroupId')]",
+              "webhookProperties": {}
+            }
+          ]
+        },
+        "enabled": true
+      }
+    }
+  ]
+}

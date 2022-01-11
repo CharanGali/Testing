@@ -1,0 +1,243 @@
+name: "002 update opsgenie key for key vault"
+
+env:
+  AZ_CLI_VERSION: 2.30.0
+  INPUT_PARAMETER_NAMES_TO_BE_MASKED: '["postAlertOpsgenieApiKey", "metricsOpsgenieEndpoint", "resourceHealthOpsgenieEndpoint", "serviceHealthOpsgenieEndpoint"]'
+
+on:
+  workflow_dispatch:
+    inputs:
+      subscription_code:
+        description: "SUBSCRIPTION_CODE of resources to be deployed. This value is also used as the github secret env value. (e.g. gcspre, gcsrls):"
+        required: true
+        default: gcspre
+      region_code:
+        description: "REGION_CODE of resources to be deployed (e.g. japaneast):"
+        required: true
+        default: japaneast
+      env_name:
+        description: "ENV_NAME of resources to be deployed (e.g. cmn, prd, qas, dev):"
+        required: true
+        default: dev
+      app_code:
+        description: "APP_CODE of resources to be deployed (usually do not need to change from lacmn):"
+        required: true
+        default: lacmn
+      postAlertOpsgenieApiKey:
+        description: "the value of the Opsgenie Integration Rest API Key"
+        required: false
+        default: ""
+      metricsOpsgenieEndpoint:
+        description: "the value of the Opsgenie Integration Azure Endpoint"
+        required: false
+        default: ""
+      resourceHealthOpsgenieEndpoint:
+        description: "the value of the Opsgenie Integration Azure Resource Health Endpoint"
+        required: false
+        default: ""
+      serviceHealthOpsgenieEndpoint:
+        description: "the value of the Opsgenie Integration Azure Resource Service Endpoint"
+        required: false
+        default: ""
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    needs: workflow-start
+    environment:
+      name: ${{ github.event.inputs.subscription_code }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Add My IP To Key Vault Network Role
+        id: addMyIpToKeyVaultNetworkRole
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            SUBSCRIPTION_CODE="${{ github.event.inputs.subscription_code }}"
+            ENV_NAME="${{ github.event.inputs.env_name }}"
+            APP_CODE="${{ github.event.inputs.app_code }}"
+            if [ ${ENV_NAME} = "cmn" ]; then
+              KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-main-kv"
+            else
+              KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
+            fi
+            MY_IP=$(curl -s https://checkip.amazonaws.com/)
+            if [ -z ${MY_IP} ]; then
+              exit 1
+            fi
+            ./.github/scripts/add-ip-to-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
+            # remove時に使うためにoutput
+            echo "::set-output name=MY_IP::${MY_IP}"
+
+      - name: Mask secret values
+        id: maskSecretValues
+        run: |
+          ./.github/scripts/mask-secret-values.sh
+
+      - name: Upsert the postAlertOpsgenieApiKey
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            SECRET_VALUE="${{ github.event.inputs.postAlertOpsgenieApiKey }}"
+            if [ -z ${SECRET_VALUE} ]; then
+              echo "skipped because of no secret value."
+              exit 0
+            fi
+            SUBSCRIPTION_CODE="${{ github.event.inputs.subscription_code }}"
+            ENV_NAME="${{ github.event.inputs.env_name }}"
+
+            if [ ${ENV_NAME} = "cmn" ]; then
+              APP_CODE="main"
+              SECRET_KEY="postAlertOpsgenieApiKeyLacmn"
+            else
+              APP_CODE="${{ github.event.inputs.app_code }}"
+              SECRET_KEY="postAlertOpsgenieApiKey"
+            fi
+
+            ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
+              ${ENV_NAME} \
+              ${SUBSCRIPTION_CODE} \
+              ${APP_CODE} \
+              ${SECRET_KEY} \
+              "${SECRET_VALUE}"
+
+      - name: Upsert the metricsOpsgenieEndpoint
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            SECRET_VALUE="${{ github.event.inputs.metricsOpsgenieEndpoint }}"
+            if [ -z ${SECRET_VALUE} ]; then
+              echo "skipped because of no secret value."
+              exit 0
+            fi
+
+            SUBSCRIPTION_CODE="${{ github.event.inputs.subscription_code }}"
+            ENV_NAME="${{ github.event.inputs.env_name }}"
+
+            if [ ${ENV_NAME} = "cmn" ]; then
+              APP_CODE="main"
+              SECRET_KEY="metricsOpsgenieEndpointLacmn"
+            else
+              APP_CODE="${{ github.event.inputs.app_code }}"
+              SECRET_KEY="metricsOpsgenieEndpoint"
+            fi
+
+            ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
+              ${ENV_NAME} \
+              ${SUBSCRIPTION_CODE} \
+              ${APP_CODE} \
+              ${SECRET_KEY} \
+              "${SECRET_VALUE}"
+
+      - name: Upsert the resourceHealthOpsgenieEndpoint
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            SECRET_VALUE="${{ github.event.inputs.resourceHealthOpsgenieEndpoint }}"
+            if [ -z ${SECRET_VALUE} ]; then
+              echo "skipped because of no secret value."
+              exit 0
+            fi
+
+            SUBSCRIPTION_CODE="${{ github.event.inputs.subscription_code }}"
+            ENV_NAME="${{ github.event.inputs.env_name }}"
+
+            if [ ${ENV_NAME} = "cmn" ]; then
+              APP_CODE="main"
+              SECRET_KEY="resourceHealthOpsgenieEndpointLacmn"
+            else
+              APP_CODE="${{ github.event.inputs.app_code }}"
+              SECRET_KEY="resourceHealthOpsgenieEndpoint"
+            fi
+
+            ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
+              ${ENV_NAME} \
+              ${SUBSCRIPTION_CODE} \
+              ${APP_CODE} \
+              ${SECRET_KEY} \
+              "${SECRET_VALUE}"
+
+      - name: Upsert the serviceHealthOpsgenieEndpoint
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            SECRET_VALUE="${{ github.event.inputs.serviceHealthOpsgenieEndpoint }}"
+            if [ -z ${SECRET_VALUE} ]; then
+              echo "skipped because of no secret value."
+              exit 0
+            fi
+
+            SUBSCRIPTION_CODE="${{ github.event.inputs.subscription_code }}"
+            ENV_NAME="${{ github.event.inputs.env_name }}"
+
+            if [ ${ENV_NAME} = "cmn" ]; then
+              APP_CODE="main"
+              SECRET_KEY="serviceHealthOpsgenieEndpointLacmn"
+            else
+              APP_CODE="${{ github.event.inputs.app_code }}"
+              SECRET_KEY="serviceHealthOpsgenieEndpoint"
+            fi
+
+            ./azure/monitoring/scripts/set-key-vault-secrets-for-lacmn.sh \
+              ${ENV_NAME} \
+              ${SUBSCRIPTION_CODE} \
+              ${APP_CODE} \
+              ${SECRET_KEY} \
+              "${SECRET_VALUE}"
+
+      - name: Remove My IP From Key Vault Network Role
+        if: always()
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            SUBSCRIPTION_CODE="${{ github.event.inputs.subscription_code }}"
+            ENV_NAME="${{ github.event.inputs.env_name }}"
+            APP_CODE="${{ github.event.inputs.app_code }}"
+
+            if [ ${ENV_NAME} = "cmn" ]; then
+              KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-main-kv"
+            else
+              KV_RG_NAME="rg-${SUBSCRIPTION_CODE}-${ENV_NAME}-${APP_CODE}-kv"
+            fi
+
+            MY_IP="${{ steps.addMyIpToKeyVaultNetworkRole.outputs.MY_IP }}"
+            if [ -z ${MY_IP} ]; then
+              exit 1
+            fi
+            ./azure/scripts/remove-ip-from-key-vault-network-rule.sh ${MY_IP} ${SUBSCRIPTION_CODE} ${KV_RG_NAME}
+
+      - name: Send Notification to slack
+        if: always()
+        uses: tokorom/action-slack-incoming-webhook@master
+        env:
+          INCOMING_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+            text: "***Opsgenie Data Update Completed*** [${{ github.repository }}] @ ${{ github.event_name }} "
+            attachments: |
+              [
+                {
+                  "author_name": "${{ github.actor }}",
+                  "author_icon": "${{ github.event.sender.avatar_url }}",
+                  "fields": [
+                    {
+                      "title": "GitHub Actions URL",
+                      "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]   

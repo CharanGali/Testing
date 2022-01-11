@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "logWorkspacesName": "[concat('log-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "retentionInDays": "[if(equals(parameters('env'), 'prd'), 180, 90)]"
+  },
+  "resources": [
+    {
+      "type": "microsoft.operationalinsights/workspaces",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('logWorkspacesName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "sku": {
+          "name": "pergb2018"
+        },
+        "retentionInDays": "[variables('retentionInDays')]",
+        "workspaceCapping": {
+          "dailyQuotaGb": -1
+        },
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    }
+  ]
+}

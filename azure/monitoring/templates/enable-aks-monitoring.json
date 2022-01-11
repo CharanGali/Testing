@@ -1,0 +1,56 @@
+{
+  // c.f. https://docs.microsoft.com/ja-jp/azure/azure-monitor/insights/container-insights-enable-existing-clusters#enable-using-an-azure-resource-manager-template
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "targetRgName": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "monitorRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "aksResourceId": "[
+      resourceId(
+        parameters('targetRgName'),
+        'Microsoft.ContainerService/managedClusters',
+        concat('aks-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-', resourceGroup().location)
+      )
+    ]",
+    "workspaceResourceId": "[
+      resourceId(
+        variables('monitorRgName'),
+        'Microsoft.operationalinsights/workspaces',
+        concat('log-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "name": "[split(variables('aksResourceId'),'/')[8]]",
+      "type": "Microsoft.ContainerService/managedClusters",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2018-03-31",
+      "properties": {
+        "mode": "Incremental",
+        "id": "[variables('aksResourceId')]",
+        "addonProfiles": {
+          "omsagent": {
+            "enabled": true,
+            "config": {
+              "logAnalyticsWorkspaceResourceID": "[variables('workspaceResourceId')]"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

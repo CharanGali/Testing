@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "retentionPolicy": {
+      "value": {
+        "prd": {
+          "days": 0,
+          "enabled": true
+        },
+        "cmn": {
+          "days": 0,
+          "enabled": true
+        },
+        "default": {
+          "days": 10,
+          "enabled": true
+        }
+      }
+    }
+  }
+}

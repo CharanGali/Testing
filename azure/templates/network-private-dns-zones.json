@@ -1,0 +1,114 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    "subsEnvApp": "[
+      concat(
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode')
+      )
+    ]",
+    // naming rule: vnet-{Subscription}-{Environment}-{Application}-{Service}-{Region}
+    "vnetName": "[
+      concat(
+        'vnet-',
+        variables('subsEnvApp'),
+        '-vnet-',
+        parameters('regionCode')
+      )
+    ]",
+    "privateDnsZoneNames": [
+      "privatelink.mysql.database.azure.com", // mysql用
+      "privatelink.vaultcore.azure.net", // key vault用
+      "privatelink.blob.core.windows.net", // Blob Storage用
+      "privatelink.queue.core.windows.net", // Storage Account Queue用
+      "privatelink.azurecr.io", // Container Registry用
+      "privatelink.database.windows.net", // sql db用
+      "privatelink.servicebus.windows.net", // web ui 用
+      "privatelink.web.core.windows.net" // web ui 用
+    ],
+    "vnetResourceGroupName": "[
+      concat(
+        'rg-',
+        parameters('subscriptionCode'),
+        '-cmn-',
+        parameters('appCode'),
+        '-vnet'
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "privateDnsZoneCopy",
+        "count": "[length(variables('privateDnsZoneNames'))]"
+      },
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-01-01",
+      "name": "[variables('privateDnsZoneNames')[copyIndex()]]",
+      "location": "global",
+      "tags": "[variables('tags')]"
+    },
+    {
+      "copy": {
+        "name": "virtualNetworkLinkCopy",
+        "count": "[length(variables('privateDnsZoneNames'))]"
+      },
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-01-01",
+      "tags": "[variables('tags')]",
+      "name": "[
+        concat(
+          variables('privateDnsZoneNames')[copyIndex()],
+          '/',
+          variables('privateDnsZoneNames')[copyIndex()],
+          '-link'
+        )
+      ]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId(
+          'Microsoft.Network/privateDnsZones',
+          variables('privateDnsZoneNames')[copyIndex()]
+        )]"
+      ],
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[
+            resourceId(
+              variables('vnetResourceGroupName'),
+              'Microsoft.Network/virtualNetworks',
+              variables('vnetName')
+            )
+          ]"
+        }
+      }
+    }
+  ]
+}

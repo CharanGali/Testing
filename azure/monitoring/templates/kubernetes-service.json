@@ -1,0 +1,108 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "String"
+    },
+    "location": {
+      "type": "String"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "targetRgName": "[concat('rg-', parameters('env'), '-', parameters('appCode'), '-aks')]",
+    "monitorRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "tags": {
+      "app": "parameters('appCode')",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "workspaceId": "[
+      resourceId(
+        variables('monitorRgName'),
+        'microsoft.operationalinsights/workspaces',
+        concat('log-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')
+      )
+    ]",
+    "clusterName": "[
+      concat(
+        'aks-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-',
+        parameters('location')
+      )
+    ]",
+    "settingName": "[
+      concat(
+        'diagnostic-setting-',
+        variables('clusterName'),
+        '-',
+        variables('targetRgName')
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerService/managedClusters/providers/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "name": "[
+        concat(
+          variables('clusterName'),
+          '/Microsoft.Insights/',
+          variables('settingName')
+        )
+      ]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "workspaceId": "[variables('workspaceId')]",
+        "logs": [
+          {
+            "category": "guard",
+            "enabled": true
+          },
+          {
+            "category": "kube-apiserver",
+            "enabled": true
+          },
+          {
+            "category": "kube-controller-manager",
+            "enabled": true
+          },
+          {
+            "category": "kube-scheduler",
+            "enabled": true
+          },
+          {
+            "category": "cluster-autoscaler",
+            "enabled": true
+          },
+          {
+            "category": "kube-audit",
+            "enabled": true
+          },
+          {
+            "category": "kube-audit-admin",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      }
+    }
+  ]
+}

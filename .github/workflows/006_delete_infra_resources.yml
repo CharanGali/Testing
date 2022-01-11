@@ -1,0 +1,72 @@
+name: "006 delete infra resources"
+
+env:
+  AZ_CLI_VERSION: 2.30.0
+
+on:
+  workflow_dispatch:
+    inputs:
+      subscription_code:
+        description: "SUBSCRIPTION_CODE of resources to be deleted. This value is also used as the github secret env value. (e.g. gcspre, gcsrls):"
+        required: true
+        default: gcspre
+      region_code:
+        description: "REGION_CODE of resources to be deleted (e.g. japaneast):"
+        required: true
+        default: japaneast
+      env_name:
+        description: "ENV_NAME of resources to be deleted (e.g. prd, sdv, dev):"
+        required: true
+        default: ""
+      app_code:
+        description: "APP_CODE of resources to be deleted (e.g. lacmn):"
+        required: true
+        default: "lacmn"
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    needs: workflow-start
+    environment:
+      name: ${{ github.event.inputs.subscription_code }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: STEP 601
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            ./azure/deployments/601-delete-infra-resources.sh \
+              "${{ github.event.inputs.env_name }}" \
+              "${{ github.event.inputs.region_code }}" \
+              "${{ github.event.inputs.subscription_code }}" \
+              "${{ github.event.inputs.app_code }}"
+
+      - name: Send Notification to slack
+        if: always()
+        uses: tokorom/action-slack-incoming-webhook@master
+        env:
+          INCOMING_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+            text: "***Infra Resources deleted*** [${{ github.repository }}] @ ${{ github.event_name }} "
+            attachments: |
+              [
+                {
+                  "author_name": "${{ github.actor }}",
+                  "author_icon": "${{ github.event.sender.avatar_url }}",
+                  "fields": [
+                    {
+                      "title": "GitHub Actions URL",
+                      "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]  

@@ -1,0 +1,141 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "String"
+    },
+    "location": {
+      "type": "String"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "usage": {
+      "type": "string",
+      "defaultValue":"logRetention"
+    }
+  },
+  "variables": {
+    "targetRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "monitorRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "actionGroupId": "[
+      resourceId(
+        variables('monitorRgName'),
+        'microsoft.insights/actionGroups',
+        concat('ag-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie')
+      )
+    ]",
+    "tmpStorageAccountName1": "[
+      concat(
+        'st-blob-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-',
+        parameters('usage'),
+        '-',
+        parameters('location')
+      )
+    ]",
+    "tmpStorageAccountName2": "[
+      replace(
+        variables('tmpStorageAccountName1'),
+        '-',
+        ''
+      )
+    ]",
+    "storageAccountName": "[
+      if(
+        greater(
+          length(variables('tmpStorageAccountName2')),
+          24
+        ),
+        substring(variables('tmpStorageAccountName2'), 0, 24),
+        variables('tmpStorageAccountName2')
+      )
+    ]",
+    "storageBlobIngressAlert": {
+      "name": "[concat('ar-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie-storage-blob-logRetention')]",
+      "severity": 3,
+      "scopes": [
+        "[
+          concat(
+            resourceId(
+              variables('targetRgName'),
+              'Microsoft.Storage/storageAccounts',
+              variables('storageAccountName')
+            )
+          )
+        ]"
+      ],
+      "evaluationFrequency": "PT1M",
+      "windowSize": "PT5M",
+      "criteria": {
+        "allOf": [
+          {
+            // 参考: https://docs.microsoft.com/ja-jp/azure/azure-monitor/logs/logs-data-export?tabs=azure-cli#recommendations-for-storage-account
+            // 最大ストレージ イングレス レート（60Gb/s）の80%を閾値とします。
+            // ビット -> バイト, 秒 -> 分 の変換を入れてあります。（ポータルで作成した時の値を使用）
+            // (60Gb/s) * 60s * 0.8 / (8byte/b) = 48318382080 B
+            "threshold": 48318382080,
+            "name": "Metric1",
+            "metricNamespace": "microsoft.storage/storageaccounts",
+            "metricName": "Ingress",
+            "operator": "GreaterThan",
+            "timeAggregation": "Total",
+            "criterionType": "StaticThresholdCriterion"
+          }
+        ],
+        "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria"
+      },
+      "targetResourceType": "Microsoft.Storage/storageAccounts"
+    },
+    "alerts": "[
+      createArray(
+        variables('storageBlobIngressAlert')
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "alerts",
+        "count": "[length(variables('alerts'))]"
+      },
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[variables('alerts')[copyIndex()].name]",
+      "location": "global",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "description": "",
+        "severity": "[variables('alerts')[copyIndex()].severity]",
+        "enabled": true,
+        "scopes": "[variables('alerts')[copyIndex()].scopes]",
+        "evaluationFrequency": "[variables('alerts')[copyIndex()].evaluationFrequency]",
+        "windowSize": "[variables('alerts')[copyIndex()].windowSize]",
+        "criteria": "[variables('alerts')[copyIndex()].criteria]",
+        "autoMitigate": true,
+        "targetResourceType": "[variables('alerts')[copyIndex()].targetResourceType]",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[variables('actionGroupId')]",
+            "webHookProperties": {}
+          }
+        ]
+      }
+    }
+  ]
+}

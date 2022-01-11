@@ -1,0 +1,232 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "String"
+    },
+    "location": {
+      "type": "String"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "usage": {
+      "type": "string",
+      "defaultValue":"shared"
+    }
+  },
+  "variables": {
+    "targetRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-kv')]",
+    "monitorRgName": "[concat('rg-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor')]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "actionGroupId": "[
+      resourceId(
+        variables('monitorRgName'),
+        'microsoft.insights/actionGroups',
+        concat('ag-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie')
+      )
+    ]",
+    "tempKeyVaultName1": "[
+      concat(
+        'kv-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-',
+        parameters('usage'),
+        '-',
+        parameters('location')
+      )
+    ]",
+    "tempKeyVaultName2": "[
+      if(
+        greater(length(variables('tempKeyVaultName1')), 24),
+        substring(variables('tempKeyVaultName1'), 0, 24),
+        variables('tempKeyVaultName1')
+      )
+    ]",
+    "keyVaultName": "[
+      if(
+        endsWith(variables('tempKeyVaultName2'), '-'),
+        substring(variables('tempKeyVaultName2'), 0, 23),
+        variables('tempKeyVaultName2')
+      )
+    ]",
+    "availabilityAlert": {
+      "name": "[concat('ar-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie-keyvault')]",
+      "severity": 0,
+      "evaluationFrequency": "PT1M",
+      "windowSize": "PT5M",
+      "criteria": {
+        "allOf": [
+          {
+            "threshold": 100,
+            "name": "Metric1",
+            "metricNamespace": "microsoft.keyvault/vaults",
+            "metricName": "Availability",
+            "operator": "LessThan",
+            "timeAggregation": "Average",
+            "criterionType": "StaticThresholdCriterion"
+          }
+        ],
+        "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+      }
+    },
+    "saturationShoeboxAlert": {
+      "name": "[concat('ar-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie-keyvaultsatu')]",
+      "severity": 1,
+      "evaluationFrequency": "PT1M",
+      "windowSize": "PT5M",
+      "criteria": {
+        "allOf": [
+          {
+            "threshold": 75,
+            "name": "Metric1",
+            "metricNamespace": "microsoft.keyvault/vaults",
+            "metricName": "SaturationShoebox",
+            "operator": "GreaterThan",
+            "timeAggregation": "Average",
+            "criterionType": "StaticThresholdCriterion"
+          }
+        ],
+        "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+      }
+    },
+    "saturationShoeboxDynamicAlert": {
+      "name": "[concat('ar-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie-keyvaultsatudyn')]",
+      "severity": 2,
+      "evaluationFrequency": "PT5M",
+      "windowSize": "PT5M",
+      "criteria": {
+        "allOf": [
+          {
+            "alertSensitivity": "Medium",
+            "failingPeriods": {
+              "numberOfEvaluationPeriods": 4,
+              "minFailingPeriodsToAlert": 4
+            },
+            "name": "Metric1",
+            "metricNamespace": "microsoft.keyvault/vaults",
+            "metricName": "SaturationShoebox",
+            "operator": "GreaterThan",
+            "timeAggregation": "Average",
+            "criterionType": "DynamicThresholdCriterion"
+          }
+        ],
+        "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+      }
+    },
+    "serviceApiLatencyAlert": {
+      "name": "[concat('ar-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie-keyvaultlatency')]",
+      "severity": 1,
+      "evaluationFrequency": "PT1M",
+      "windowSize": "PT5M",
+      "criteria": {
+        "allOf": [
+          {
+            "threshold": 500,
+            "name": "Metric1",
+            "metricNamespace": "microsoft.keyvault/vaults",
+            "metricName": "ServiceApiLatency",
+            "operator": "GreaterThan",
+            "timeAggregation": "Average",
+            "criterionType": "StaticThresholdCriterion"
+          }
+        ],
+        "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+      }
+    },
+    "serviceApiResultDynamicAlert": {
+      "name": "[concat('ar-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie-keyvaulterrordyn')]",
+      "severity": 2,
+      "evaluationFrequency": "PT5M",
+      "windowSize": "PT5M",
+      "criteria": {
+        "allOf": [
+          {
+            "alertSensitivity": "Medium",
+            "failingPeriods": {
+              "numberOfEvaluationPeriods": 4,
+              "minFailingPeriodsToAlert": 4
+            },
+            "name": "Metric1",
+            "metricNamespace": "microsoft.keyvault/vaults",
+            "metricName": "ServiceApiResult",
+            "dimensions": [
+              {
+                "name": "StatusCodeClass",
+                "operator": "Include",
+                "values": [
+                  "4xx",
+                  "5xx"
+                ]
+              }
+            ],
+            "operator": "GreaterThan",
+            "timeAggregation": "Average",
+            "criterionType": "DynamicThresholdCriterion"
+          }
+        ],
+        "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+      }
+    },
+    "alerts": "[
+      createArray(
+        variables('availabilityAlert'),
+        variables('saturationShoeboxAlert'),
+        variables('saturationShoeboxDynamicAlert'),
+        variables('serviceApiLatencyAlert'),
+        variables('serviceApiResultDynamicAlert')
+      )
+    ]"
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "alerts",
+        "count": "[length(variables('alerts'))]"
+      },
+      "type": "microsoft.insights/metricalerts",
+      "apiVersion": "2018-03-01",
+      "name": "[variables('alerts')[copyIndex()].name]",
+      "location": "global",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "description": "",
+        "severity": "[variables('alerts')[copyIndex()].severity]",
+        "enabled": true,
+        "scopes": [
+          "[
+            resourceId(
+              variables('targetRgName'),
+              'Microsoft.KeyVault/vaults',
+              variables('keyVaultName')
+            )
+          ]"
+        ],
+        "evaluationFrequency": "[variables('alerts')[copyIndex()].evaluationFrequency]",
+        "windowSize": "[variables('alerts')[copyIndex()].windowSize]",
+        "criteria": "[variables('alerts')[copyIndex()].criteria]",
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.KeyVault/vaults",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[variables('actionGroupId')]",
+            "webHookProperties": {}
+          }
+        ]
+      }
+    }
+  ]
+}

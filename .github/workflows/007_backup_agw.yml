@@ -1,0 +1,76 @@
+name: "007 backup AGW"
+
+env:
+  AZ_CLI_VERSION: 2.30.0
+
+on:
+  workflow_dispatch:
+    inputs:
+      subscription_code:
+        type: environment
+        description: "SUBSCRIPTION_CODE of resources to be deployed. This value is also used as the github secret env value. (e.g. gcspre):"
+        required: true
+        default: gcspre
+      env_name:
+        description: "ENV_NAME of resources to be deployed (usually do not need to change from cmn):"
+        required: true
+        default: cmn
+      app_code:
+        description: "APP_CODE of resources to be deployed (usually do not need to change from lacmn):"
+        required: true
+        default: lacmn
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.subscription_code }}
+    steps:
+      - name: Set variables
+        run: |
+          {
+            echo "SUBSCRIPTION_CODE=${{ github.event.inputs.subscription_code }}"
+            echo "ENV_NAME=${{ github.event.inputs.env_name }}"
+            echo "APP_CODE=${{ github.event.inputs.app_code }}"
+          } >> $GITHUB_ENV
+
+      - name: Checkout source code
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: backup AGW
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            ./azure/scripts/backup-application-gateway.sh \
+              "${ENV_NAME}" \
+              "${SUBSCRIPTION_CODE}" \
+              "${APP_CODE}"
+
+      - name: Send Notification to slack
+        if: always()
+        uses: tokorom/action-slack-incoming-webhook@master
+        env:
+          INCOMING_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+            text: "***Application Gateway Backup Completed*** [${{ github.repository }}] @ ${{ github.event_name }} "
+            attachments: |
+              [
+                {
+                  "author_name": "${{ github.actor }}",
+                  "author_icon": "${{ github.event.sender.avatar_url }}",
+                  "fields": [
+                    {
+                      "title": "GitHub Actions URL",
+                      "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]  

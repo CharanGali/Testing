@@ -1,0 +1,102 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "regionCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "deploymentVersion": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "env": "[parameters('env')]",
+      "regionCode": "[parameters('regionCode')]",
+      "deploymentVersion": "[parameters('deploymentVersion')]"
+    },
+    // naming rule: role-{Subscription}-{Environment}-{Application}-{Usage}
+    // ユーザーフレンドリーな命名
+    "roleName": "[
+      concat(
+        'role-',
+        parameters('subscriptionCode'),
+        '-',
+        parameters('env'),
+        '-',
+        parameters('appCode'),
+        '-gha-sp-ss-base-la'
+      )
+    ]",
+    // roleの名前（ID形式、roleNameで一意になるようにハッシュをID化する）
+    "roleDefName": "[guid(variables('roleName'))]",
+    "roleDescription": "Custom Role Definition for GHA Service Principal",
+    "assignableScopes": [
+      "[subscription().id]"
+    ],
+    "actions": [
+      // 適宜必要なリソースの権限を与える
+      // 参考: https://docs.microsoft.com/ja-jp/azure/role-based-access-control/resource-provider-operations
+      // KeyVaultを参照するための権限
+      "Microsoft.KeyVault/*",
+      // KeyVault名をResourceGroupから取得するための権限
+      "Microsoft.Resources/subscriptions/resourceGroups/read",
+      // deployment一覧を取得するための権限
+      "Microsoft.Resources/deployments/read",
+      // AKSに接続するための権限
+      "Microsoft.ContainerService/*",
+      // ACRの権限
+      "Microsoft.ContainerRegistry/*",
+      // 適宜必要なリソースの権限を与える
+      // 参考: https://docs.microsoft.com/ja-jp/azure/role-based-access-control/resource-provider-operations
+      "Microsoft.Network/*",
+      "Microsoft.Storage/*",
+      "Microsoft.Insights/*",
+      "Microsoft.Kubernetes/*",
+      "Microsoft.Resources/*",
+      "Microsoft.ContainerInstance/*",
+      "Microsoft.OperationalInsights/workspaces/sharedkeys/read",
+      "Microsoft.OperationalInsights/workspaces/read",
+      "Microsoft.OperationsManagement/solutions/write",
+      "Microsoft.OperationsManagement/solutions/read"
+    ],
+    "notActions": []
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Authorization/roleDefinitions",
+      "apiVersion": "2018-07-01",
+      "name": "[variables('roleDefName')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "roleName": "[variables('roleName')]",
+        "description": "[variables('roleDescription')]",
+        "type": "customRole",
+        "isCustom": true,
+        "permissions": [
+          {
+            "actions": "[variables('actions')]",
+            "notActions": "[variables('notActions')]"
+          }
+        ],
+        "assignableScopes": "[variables('assignableScopes')]"
+      }
+    }
+  ],
+  "outputs": {
+    "customRoleId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName'))]"
+    }
+  }
+}

@@ -1,0 +1,3 @@
+node_modules/*
+common/domain/core/err.ts
+common/domain/core/customError.ts

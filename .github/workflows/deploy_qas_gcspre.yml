@@ -1,0 +1,162 @@
+name: (GCSPRE_QAS) Create OCSP for SmartCamera
+
+on:
+  push:
+    branches:
+     - 'camera_qas'
+
+  workflow_dispatch:
+
+# Set Environment Variables
+env:
+  APP_CODE: ladps
+  SUBSCRIPTION_CODE: gcspre
+  REGION_CODE: japaneast
+  ENV: qas
+  KEYVAULT: kv-gcspre-qas-ladps-shar
+  SP_NAME: sp-gcspre-cmn-main-gha-ss-base-dps
+
+jobs:
+  push-express-image:
+    runs-on: ubuntu-latest
+    environment:
+      name: gcspre
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@master
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Fetch secrets from KeyVault
+        uses: Azure/get-keyvault-secrets@v1
+        with:
+          keyvault: ${{ env.KEYVAULT }}
+          secrets: "acrLoginServer, acrUsername, acrPassword"
+        id: fetchFromKeyVault
+
+      - name: Set env
+        run: |
+          ACR_LOGIN_SERVER="${{ steps.fetchFromKeyVault.outputs.acrLoginServer }}"
+          ACR_USERNAME="${{ steps.fetchFromKeyVault.outputs.acrUsername }}"
+          ACR_PASSWORD="${{ steps.fetchFromKeyVault.outputs.acrPassword }}"
+          source ./.github/scripts/set_secret_env.sh
+
+      - name: Build and push image
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+      - run: |
+          # Write the content to Docker Compose file
+          sed -i -e "s/\${GITHUBACTION_KVNAME}/$KV_NAME/" docker-compose.yml
+          OCSPREPO_NAME="${ENV}-ss-base-ocsp:${GITHUB_SHA}"
+          docker build . -t ${ACR_LOGIN_SERVER}/${OCSPREPO_NAME}
+          docker push ${ACR_LOGIN_SERVER}/${OCSPREPO_NAME}
+
+  k8s-deploy:
+    # needs: [init-db-schema, push-express-image]
+    needs: [push-express-image]
+    runs-on: ubuntu-latest
+    environment:
+      name: gcspre
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0 # fetch tags for git describe
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Fetch secrets from KeyVault
+        uses: Azure/get-keyvault-secrets@v1
+        with:
+          keyvault: ${{ env.KEYVAULT }}
+          secrets: "mysqlHost, mysqlUsername, mysqlPassword, acmAccessKeyId, acmSecretAccessKey, acrLoginServer, acrUsername, acrPassword, sp-aks-tenant, sp-aks-appId, sp-aks-password"
+        id: fetchFromKeyVault
+
+      - name: Set env
+        run: |
+          BRANCH_NAME=$(echo ${GITHUB_REF##*/} | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z]//g')
+          ENV_CODE=${{ env.ENV }}
+          AWS_SECRET_ACCESS_KEY="${{ steps.fetchFromKeyVault.outputs.acmSecretAccessKey }}"
+          AWS_ACCESS_KEY_ID="${{ steps.fetchFromKeyVault.outputs.acmAccessKeyId }}"
+          source ./.github/scripts/set_env_gcspre.sh
+
+          MYSQL_HOST="${{ steps.fetchFromKeyVault.outputs.mysqlHost }}"
+          MYSQL_USERNAME="${{ steps.fetchFromKeyVault.outputs.mysqlUsername }}"
+          MYSQL_PASSWORD="${{ steps.fetchFromKeyVault.outputs.mysqlPassword }}"
+          ACR_LOGIN_SERVER="${{ steps.fetchFromKeyVault.outputs.acrLoginServer }}"
+          ACR_USERNAME="${{ steps.fetchFromKeyVault.outputs.acrUsername }}"
+          ACR_PASSWORD="${{ steps.fetchFromKeyVault.outputs.acrPassword }}"
+          TENANT_ID="${{ steps.fetchFromKeyVault.outputs.sp-aks-tenant }}"
+          CLIENT_ID_KEYVAULT="${{ steps.fetchFromKeyVault.outputs.sp-aks-appId }}"
+          CLIENT_SECRET_KEYVAULT="${{ steps.fetchFromKeyVault.outputs.sp-aks-password }}"
+          source ./.github/scripts/set_secret_env.sh
+
+      - name: Set the target aks cluster
+        uses: Azure/aks-set-context@v1
+        with:
+          creds: "${{ secrets.AZURE_CREDENTIALS }}"
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RG_NAME }}
+
+      - name: Deploy charts
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            bash ./k8s/deploy.sh -e ${ENV} -p ${PREFIX} -a ${{ env.APP_CODE }} -s ${{ env.SUBSCRIPTION_CODE }} -r ${{ env.REGION_CODE }} -m ${{ env.MYSQL_HOST }}
+
+      - if: success()
+        name: Post to slack(SUCCESS)
+        uses: tokorom/action-slack-incoming-webhook@master
+        env:
+          INCOMING_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          text: "azure deploy OCSP @ GCSPRE_QAS SUCCESS! :white_check_mark:"
+          attachments: |
+            [
+              {
+                "color": "${{ env.RESULT_COLOR }}",
+                "author_name": "${{ github.actor }}",
+                "author_icon": "${{ github.event.sender.avatar_url }}",
+                "fields": [
+                  {
+                    "title": "GitHub Actions URL",
+                    "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                  }
+                ]
+              }
+            ]
+
+      - if: failure()
+        name: Post to slack(FAILURE)
+        uses: tokorom/action-slack-incoming-webhook@master
+        env:
+          INCOMING_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          text: "azure deploy OCSP @ GCSPRE_QAS FAILURE! :red_circle:"
+          attachments: |
+            [
+              {
+                "color": "${{ env.RESULT_COLOR }}",
+                "author_name": "${{ github.actor }}",
+                "author_icon": "${{ github.event.sender.avatar_url }}",
+                "fields": [
+                  {
+                    "title": "Commit Message",
+                    "value": "${{ github.event.head_commit.message }}"
+                  },
+                  {
+                    "title": "GitHub Actions URL",
+                    "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                  }
+                ]
+              }
+            ]

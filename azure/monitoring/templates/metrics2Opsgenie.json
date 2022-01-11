@@ -1,0 +1,239 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "appCode": {
+      "type": "string"
+    },
+    "subscriptionCode": {
+      "type": "string"
+    },
+    "metricsOpsgenieEndpoint": {
+      "type": "securestring"
+    }
+  },
+  "variables": {
+    "workspaceId": "[resourceId('microsoft.operationalinsights/workspaces', concat('log-', parameters('subscriptionCode'), '-', parameters('env'), '-', parameters('appCode'), '-monitor'))]",
+    "workflowsName": "[concat('la-', parameters('subscriptionCode'), '-', parameters('env'), '-metrics2Opsgenie')]",
+    "tags": {
+      "app": "[parameters('appCode')]",
+      "type": "monitor",
+      "env": "[parameters('env')]"
+    },
+    "triggerResourceId": "[resourceId('Microsoft.Logic/workflows/triggers', variables('workflowsName'), 'manual')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2017-07-01",
+      "name": "[variables('workflowsName')]",
+      "tags": "[variables('tags')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "opsgenieEndpoint": {
+              "type": "SecureString"
+            }
+          },
+          "triggers": {
+            "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "properties": {
+                        "context": {
+                          "properties": {
+                            "condition": {
+                              "properties": {
+                                "allOf": {
+                                  "items": {
+                                    "properties": {
+                                      "dimensions": {
+                                        "items": {
+                                          "properties": {
+                                            "name": {
+                                              "type": "string"
+                                            },
+                                            "value": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": [
+                                            "name",
+                                            "value"
+                                          ],
+                                          "type": "object"
+                                        },
+                                        "type": "array"
+                                      },
+                                      "metricName": {
+                                        "type": "string"
+                                      },
+                                      "metricValue": {
+                                        "type": "integer"
+                                      },
+                                      "operator": {
+                                        "type": "string"
+                                      },
+                                      "threshold": {
+                                        "type": "string"
+                                      },
+                                      "timeAggregation": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "metricName",
+                                      "dimensions",
+                                      "operator",
+                                      "threshold",
+                                      "timeAggregation",
+                                      "metricValue"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  "type": "array"
+                                },
+                                "windowSize": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "conditionType": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "portalLink": {
+                              "type": "string"
+                            },
+                            "resourceGroupName": {
+                              "type": "string"
+                            },
+                            "resourceId": {
+                              "type": "string"
+                            },
+                            "resourceName": {
+                              "type": "string"
+                            },
+                            "resourceType": {
+                              "type": "string"
+                            },
+                            "subscriptionId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "properties": {
+                          "properties": {
+                            "key1": {
+                              "type": "string"
+                            },
+                            "key2": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "schemaId": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "actions": {
+            "HTTP": {
+              "runAfter": {},
+              "type": "Http",
+              "inputs": {
+                "body": "@triggerBody()",
+                "headers": {
+                  "Severity": "@{concat('Sev', coalesce(triggerBody()?['data']?['context']?['severity'], 'N'))}",
+                  "Severity-To-Loglevel": "@{if(equals(triggerBody()?['data']?['context']?['severity'],'1'), 'ERROR', if(equals(triggerBody()?['data']?['context']?['severity'],'2'), 'WARN', if(equals(triggerBody()?['data']?['context']?['severity'],'3'), 'INFO', if(equals(triggerBody()?['data']?['context']?['severity'],'4'), 'DEBUG', 'CRITICAL'))))}",
+                  "Severity-To-Priority": "@{if(equals(triggerBody()?['data']?['context']?['severity'],'1'), 'P2', if(equals(triggerBody()?['data']?['context']?['severity'],'2'), 'P3', if(equals(triggerBody()?['data']?['context']?['severity'],'3'), 'P4', if(equals(triggerBody()?['data']?['context']?['severity'],'4'), 'P5', 'P1'))))}"
+                },
+                "method": "POST",
+                "uri": "@parameters('opsgenieEndpoint')"
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {
+          "opsgenieEndpoint": {
+            "value": "[parameters('metricsOpsgenieEndpoint')]"
+          }
+        }
+      },
+      "resources": [
+        {
+          "type": "providers/diagnosticSettings",
+          "name": "[concat('Microsoft.Insights/', variables('workflowsName'))]",
+          "location": "[parameters('location')]",
+          "apiVersion": "2017-05-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Logic/workflows', variables('workflowsName'))]"
+          ],
+          "properties": {
+            "workspaceId": "[variables('workspaceId')]",
+            "logs": [
+              {
+                "category": "WorkflowRuntime",
+                "enabled": true
+              }
+            ],
+            "metrics": [
+              {
+                "category": "AllMetrics",
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "logicAppTriggerUrl": {
+      "type": "string",
+      "value": "[listCallbackUrl(variables('triggerResourceId'), '2016-10-01').value]"
+    }
+  }
+}
