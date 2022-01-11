@@ -1,4 +1,4 @@
-name: "001 prepare the AWS-SQL data"
+name: "002 prepare the AWS-SQL data"
 
 env:
   AZ_CLI_VERSION: 2.30.0
@@ -72,24 +72,24 @@ jobs:
             bash ./.github/scripts/add-ip-to-aks-network-rule.sh ${ENV_NAME} ${REGION_CODE} ${SUBSCRIPTION_CODE} ${APP_CODE} ${MY_IP}
             sleep 120;
 
-      - name: STEP 100
+      - name: STEP 200
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./saas/azure/deployments/100-add-key-vault-secrets.sh \
+            bash ./saas/azure/deployments/200-add-key-vault-secrets.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.app_code }}" \
               "${{ github.event.inputs.acm_access_key_id }}" \
               "${{ github.event.inputs.acm_secret_access_key }}"
 
-      - name: STEP 101
+      - name: STEP 201
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./saas/azure/deployments/101-init-lacmn-db.sh \
+            bash ./saas/azure/deployments/201-init-lacmn-db.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \

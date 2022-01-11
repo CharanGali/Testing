@@ -1,4 +1,4 @@
-name: 000 deploy infra
+name: 001 deploy infra
 
 env:
   AZ_CLI_VERSION: 2.30.0
@@ -54,56 +54,56 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: STEP 000
+      - name: STEP 100
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/000-deploy-lacmn-key-vault.sh \
+            bash ./azure/deployments/100-deploy-lacmn-key-vault.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.app_code }}"
 
-      - name: STEP 001
+      - name: STEP 101
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/001-deploy-sql-secret-settings.sh \
+            bash ./azure/deployments/101-deploy-sql-secret-settings.sh \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.app_code }}"
 
-      - name: STEP 002
+      - name: STEP 102
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/002-deploy-vnet-sql-cr-resources.sh \
+            bash ./azure/deployments/102-deploy-vnet-sql-cr-resources.sh \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.app_code }}"
 
-      - name: STEP 003
+      - name: STEP 103
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/003-deploy-github-secret-settings.sh \
+            bash ./azure/deployments/103-deploy-github-secret-settings.sh \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.app_code }}"
 
-      - name: STEP 004
+      - name: STEP 104
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/004-deploy-agw-resources.sh \
+            bash ./azure/deployments/104-deploy-agw-resources.sh \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.env_name }}" \
@@ -112,22 +112,22 @@ jobs:
               "${{ github.event.inputs.restore_file_name }}" \
               "${{ github.event.inputs.force_update_flag }}"
 
-      - name: STEP 005
+      - name: STEP 105
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/005-deploy-lacmn-app-auth-settings.sh \
+            bash ./azure/deployments/105-deploy-lacmn-app-auth-settings.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.app_code }}"
 
-      - name: STEP 006
+      - name: STEP 106
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/006-deploy-aks-resources.sh \
+            bash ./azure/deployments/106-deploy-aks-resources.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \

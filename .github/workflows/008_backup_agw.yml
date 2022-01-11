@@ -1,4 +1,4 @@
-name: "007 backup AGW"
+name: "008 backup AGW"
 
 env:
   AZ_CLI_VERSION: 2.30.0

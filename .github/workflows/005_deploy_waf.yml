@@ -1,4 +1,4 @@
-name: "004 deploy waf"
+name: "005 deploy waf"
 
 env:
   AZ_CLI_VERSION: 2.30.0
@@ -40,14 +40,14 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       # create additinal WAF policies and associate with AGW on a path based rule(la, dps)
-      - name: STEP 401
+      - name: STEP 501
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
             for module in {la,dps}
             do
-              bash ./azure/deployments/401-deploy-additinal-waf-policies.sh \
+              bash ./azure/deployments/501-deploy-additinal-waf-policies.sh \
                 "${{ github.event.inputs.env_name }}" \
                 "${module}" \
                 "${{ github.event.inputs.region_code }}" \

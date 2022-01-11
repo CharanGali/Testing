@@ -1,4 +1,4 @@
-name: "002 update opsgenie key for key vault"
+name: "003 update opsgenie key for key vault"
 
 env:
   AZ_CLI_VERSION: 2.30.0

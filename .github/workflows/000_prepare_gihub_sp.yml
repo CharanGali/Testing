@@ -1,0 +1,72 @@
+name: 000 prepare GitHub SP
+
+env:
+  AZ_CLI_VERSION: 2.30.0
+
+on:
+  workflow_dispatch:
+    inputs:
+      subscription_code:
+        description: "SUBSCRIPTION_CODE of resources to be deployed. This value is also used as the github secret env value. (e.g. gcspre, gcsrls):"
+        required: true
+        default: gcspre
+      region_code:
+        description: "REGION_CODE of resources to be deployed (e.g. japaneast):"
+        required: true
+        default: japaneast
+      env_name:
+        description: "ENV_NAME of resources to be deployed (e.g. prd, sdv, dev):"
+        required: true
+        default: dev
+      app_code:
+        description: "APP_CODE of resources to be deployed (usually do not need to change from lacmn):"
+        required: true
+        default: lacmn
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.subscription_code }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: STEP 000
+        uses: azure/CLI@v1
+        with:
+          azcliversion: ${{ env.AZ_CLI_VERSION }}
+          inlineScript: |
+            bash ./azure/deployments/000-deploy-gitsecret-settings.sh \
+              "${{ github.event.inputs.env_name }}" \
+              "${{ github.event.inputs.region_code }}" \
+              "${{ github.event.inputs.subscription_code }}" \
+              "${{ github.event.inputs.app_code }}"
+
+      - name: Send Notification to slack
+        if: always()
+        uses: tokorom/action-slack-incoming-webhook@master
+        env:
+          INCOMING_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+            text: "***Git Initial Secrets Creation Completed*** [${{ github.repository }}] @ ${{ github.event_name }} "
+            attachments: |
+              [
+                {
+                  "author_name": "${{ github.actor }}",
+                  "author_icon": "${{ github.event.sender.avatar_url }}",
+                  "fields": [
+                    {
+                      "title": "GitHub Actions URL",
+                      "value": "https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]   

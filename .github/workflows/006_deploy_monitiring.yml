@@ -1,4 +1,4 @@
-name: "005 deploy monitoring"
+name: "006 deploy monitoring"
 
 env:
   AZ_CLI_VERSION: 2.30.0

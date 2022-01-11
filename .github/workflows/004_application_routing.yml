@@ -1,4 +1,4 @@
-name: "003 application routing"
+name: "004 application routing"
 
 env:
   AZ_CLI_VERSION: 2.30.0
@@ -40,25 +40,25 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       # DNS zones
-      - name: STEP 300
+      - name: STEP 400
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/300-update-dns-record.sh \
+            bash ./azure/deployments/400-update-dns-record.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.app_code }}"
 
       # Backend pools(la, dps, ocsp)
-      - name: STEP 301
+      - name: STEP 401
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
             for module in {la,dps,ocsp}
             do
-              bash ./azure/deployments/301-update-agw-backend-pool-for-each-module.sh \
+              bash ./azure/deployments/401-update-agw-backend-pool-for-each-module.sh \
                 "${{ github.event.inputs.env_name }}" \
                 "${module}" \
                 "${{ github.event.inputs.region_code }}" \
@@ -69,14 +69,14 @@ jobs:
             done
 
       # Http settings(la, dps, ocsp)
-      - name: STEP 302
+      - name: STEP 402
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
             for module in {la,dps,ocsp}
             do
-              bash ./azure/deployments/302-update-agw-http-setting-for-each-module.sh \
+              bash ./azure/deployments/402-update-agw-http-setting-for-each-module.sh \
                 "${{ github.event.inputs.env_name }}" \
                 "${module}" \
                 "${{ github.event.inputs.region_code }}" \
@@ -88,12 +88,12 @@ jobs:
             done
 
       # Listeners
-      - name: STEP 303
+      - name: STEP 403
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/303-update-agw-listener.sh \
+            bash ./azure/deployments/403-update-agw-listener.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \
@@ -103,26 +103,26 @@ jobs:
               ""
 
       # Url path map and Rules
-      - name: STEP 304
+      - name: STEP 404
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
-            bash ./azure/deployments/304-update-agw-url-path-map-rule.sh \
+            bash ./azure/deployments/404-update-agw-url-path-map-rule.sh \
               "${{ github.event.inputs.env_name }}" \
               "${{ github.event.inputs.region_code }}" \
               "${{ github.event.inputs.subscription_code }}" \
               "${{ github.event.inputs.app_code }}"
 
       # Path based Rules(la, dps, ocsp)
-      - name: STEP 305
+      - name: STEP 405
         uses: azure/CLI@v1
         with:
           azcliversion: ${{ env.AZ_CLI_VERSION }}
           inlineScript: |
             for module in {la,dps,ocsp}
             do
-              bash ./azure/deployments/305-update-agw-path-based-rule-for-each-module.sh \
+              bash ./azure/deployments/405-update-agw-path-based-rule-for-each-module.sh \
                 "${{ github.event.inputs.env_name }}" \
                 "${module}" \
                 "${{ github.event.inputs.region_code }}" \
