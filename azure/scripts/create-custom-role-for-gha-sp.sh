@@ -5,9 +5,9 @@ shopt -s inherit_errexit
 
 : $1 $2 $3 $4
 
-readonly ENV_NAME=$1
+readonly ENV_NAME=$3
 readonly REGION_CODE=$2
-readonly SUBSCRIPTION_CODE=$3
+readonly SUBSCRIPTION_CODE=$1
 readonly APP_CODE=$4
 
 pushd $(dirname $0)
